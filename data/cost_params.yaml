@@ -1,0 +1,167 @@
+# Economic and behavioural parameters for the network model.
+#
+# Tier 1 (public proxy) values. Fuel price tracks published ATF notifications and the
+# jet-fuel index; airport and navigation charges are order-of-magnitude figures derived
+# from published tariff schedules. Replace with contracted rates in Tier 2.
+
+fuel:
+  price_usd_per_kg: 0.86          # jet fuel, all-in delivered
+  taxi_burn_kg_per_cycle: 320     # ground burn per departure, averaged
+  contingency_factor: 1.06        # reserve/alternate fuel uplift over great-circle burn
+
+# STATED ASSUMPTION / Tier 1 proxy: a single blended carbon price on departures
+# touching an ETS-exposed country, rather than simulating the exact EU ETS phase-in,
+# UK ETS scope, or CORSIA offsetting baseline. Opt-in via
+# solve_network(carbon_priced=True). Replace with contracted carbon costs in Tier 2.
+carbon:
+  co2_per_kg_fuel: 3.16           # ICAO factor, kg CO2 per kg jet fuel burned
+  price_usd_per_tonne_co2: 85     # blended EU ETS / UK ETS / CORSIA proxy price
+  # Countries this network actually touches whose departures/arrivals we treat as
+  # carbon-priced today (GB=London, DE=Frankfurt/Munich, FR=Paris, NL=Amsterdam,
+  # CH=Zurich, AT=Vienna, IT=Milan, DK=Copenhagen).
+  priced_countries: [GB, DE, FR, NL, CH, AT, IT, DK]
+
+# Airport, navigation and ground-handling charges, per departure.
+# Widebody figures reflect heavier landing-weight and larger handling teams.
+charges:
+  domestic:
+    narrow_per_departure_usd: 1650
+    wide_per_departure_usd: 4200
+  international:
+    narrow_per_departure_usd: 3400
+    wide_per_departure_usd: 9800
+  slot_constrained_surcharge_usd: 1200
+
+# Per-passenger variable cost: catering, commissions, distribution, pax handling.
+passenger:
+  domestic_cost_per_pax_usd: 14
+  international_cost_per_pax_usd: 38
+
+# Demand behaviour.
+demand:
+  # Schedule quality: adding frequency stimulates demand with diminishing returns
+  # (the classic S-curve). frequency_ref is the baseline the demand figures in
+  # markets.csv are quoted at; stimulation is modelled relative to it.
+  frequency_ref: 2
+  # Maximum uplift over base demand achievable through frequency alone.
+  max_frequency_uplift: 0.55
+  # How sharply uplift saturates. Higher = saturates sooner.
+  saturation_k: 0.45
+  # Business-heavy markets reward frequency more than leisure markets.
+  business_mix_weight: 0.7
+  #
+  # NOTE: the optimiser does not approximate this curve with piecewise segments.
+  # Daily frequency is a small integer, so it enumerates every level exactly --
+  # see anos.optimize.fleet_assignment. There is no linearisation error to tune.
+  #
+  # NOTE: spilled demand is assumed lost entirely. Recapture onto another Air India
+  # flight in the same market is not modelled, which makes spill figures conservative.
+
+# Operating envelope.
+operations:
+  # Buffer applied to published range before a type is deemed eligible for a sector.
+  # Published range assumes a payload and winds a revenue sector does not get.
+  #
+  # 0.92 is calibrated against routes Air India actually operates: Bengaluru-San
+  # Francisco is 13,988 km, flown with the 777-200LR, which only qualifies above 0.885.
+  # A tighter factor makes the model reject real, flown routes.
+  #
+  # KNOWN LIMITATION: sectors close to this limit are flown with a payload penalty --
+  # blocked seats or forgone cargo. The model does not yet monetise that penalty, so
+  # it slightly overstates the economics of ultra-long-haul sectors. The feasibility
+  # check flags them (category "payload-range") rather than leaving it implicit.
+  range_safety_factor: 0.92
+  # Sectors above this share of a type's usable range are flagged as payload-limited.
+  payload_penalty_threshold: 0.95
+  # Ground time actually planned = min_turn * this. Airlines schedule above the
+  # technical minimum to absorb variance -- consistently hitting the planned window
+  # matters more than the absolute number.
+  turn_buffer_factor: 1.25
+  # Opt-in alternative to turn_buffer_factor (solve_network(fast_turn=True)):
+  # a minimum-connect-time programme -- tighter gate procedures, simplified
+  # boarding -- that shrinks the buffer over the technical minimum turn without
+  # changing the technical minimum itself. Frees aircraft-hours for more
+  # departures at the same service level.
+  fast_turn_buffer_factor: 1.10
+  # Fraction of the fleet unavailable at any moment for unscheduled maintenance,
+  # AOG and spares -- on top of the explicit A/C/D-check model. Keyed by
+  # AircraftType.generation, not a single network-wide number.
+  #
+  # STATED ASSUMPTION, per-generation split grounded in Air India's own documented
+  # history (researched 2026-08): the airline ran ~13 Boeing 787s grounded for YEARS
+  # and at one point had ~23% of its total fleet idle for lack of spares (~$3.6B of
+  # aircraft sitting in hangars), a carrier-specific pattern of underfunded spares
+  # inventory (mostly pre-Tata-acquisition financial distress), not an engine-family
+  # defect -- confirmed Air India's own A320/A321neo order runs CFM LEAP engines,
+  # NOT Pratt & Whitney GTF, so the neo-generation narrowbody fleet is largely
+  # insulated from the industry-wide GTF grounding crisis affecting other Indian
+  # carriers. `legacy`/`legacy_widebody` types (the ones actually named in that
+  # history: A319/A320ceo/A321ceo, B777-200LR/300ER, B787-8) carry the elevated
+  # rate; `neo`/`new_widebody` (newer programmes, better-supported spares pipelines)
+  # stay close to the pre-existing 0.04 baseline. Replace with Air India's own
+  # dispatch-reliability/AOG data in Tier 2.
+  unscheduled_downtime_rate:
+    legacy: 0.07
+    legacy_widebody: 0.065
+    neo: 0.04
+    new_widebody: 0.045
+  # Minimum acceptable network-wide load factor before a plan is flagged.
+  target_load_factor: 0.82
+
+# STATED ASSUMPTION, not derived from data: own-price elasticity of demand beyond
+# today's frequency-driven ceiling. Blended by business_mix the same way demand.py
+# blends the frequency uplift -- leisure demand is far more price-sensitive than
+# business demand. Opt-in via solve_network(enable_fare_elasticity=True). Pending
+# real fare-class booking curves (Tier 2).
+fare_elasticity:
+  fare_multipliers: [0.85, 1.00, 1.15]   # relative to markets.csv avg_fare_usd
+  leisure_elasticity: -1.2
+  business_elasticity: -0.4
+  # Clip on the resulting demand multiplier so a small elasticity estimate cannot
+  # extrapolate to an implausible demand swing.
+  multiplier_band: [0.6, 1.6]
+
+# STATED ASSUMPTION: a connecting itinerary via a hub captures a smaller share of a
+# market's addressable demand than a nonstop would (added travel time, connection
+# risk, no schedule to sell against). This is independent of schedule_quality,
+# which models nonstop frequency stimulation. Opt-in via
+# solve_network(enable_connections=True, hubs=[...]).
+connections:
+  capture_rate: 0.35
+  handling_cost_usd_per_pax: 12
+  # STATED ASSUMPTION: when a market's own nonstop spills demand, some of that spill
+  # is recapturable onto the SAME market's connection candidate (a passenger who
+  # can't get the nonstop takes the one-stop instead of being lost). Independent of
+  # capture_rate, which bounds the connection's own baseline demand. Opt-in via
+  # solve_network(enable_connections=True, enable_recapture=True, hubs=[...]).
+  recapture_rate: 0.30
+
+# STATED ASSUMPTION: markets with no domestic feeder at any hub we control cannot be
+# banked (see anos.network.itinerary.build_connection_candidates). A partner/interline
+# agreement is a plausible alternative -- this is a placeholder for "some partner
+# could sell this itinerary," not a claim about which carrier. Opt-in via
+# solve_network(enable_interline=True); flagged markets live in markets.csv's
+# interline_available column.
+interline:
+  prorate_usd_per_pax: 45
+  capture_rate: 0.20
+
+# Seasonality multipliers applied to base demand, by profile and month (Jan..Dec).
+seasonality:
+  domestic_business: [0.98, 0.99, 1.04, 1.00, 0.96, 0.92, 0.94, 0.96, 1.02, 1.06, 1.08, 1.05]
+  domestic_vfr:      [0.94, 0.92, 0.98, 1.02, 1.12, 1.10, 1.04, 1.00, 0.98, 1.08, 1.12, 1.10]
+  domestic_regional: [0.96, 0.95, 1.00, 1.00, 1.04, 1.02, 0.98, 0.98, 1.00, 1.05, 1.06, 1.04]
+  leisure_winter:    [1.18, 1.14, 1.02, 0.92, 0.86, 0.82, 0.88, 0.90, 0.92, 1.04, 1.14, 1.22]
+  leisure_summer:    [0.82, 0.84, 0.92, 1.04, 1.18, 1.22, 1.16, 1.08, 0.96, 0.90, 0.86, 0.84]
+  intl_summer:       [0.88, 0.86, 0.94, 1.00, 1.10, 1.18, 1.22, 1.16, 1.02, 0.94, 0.88, 0.94]
+  intl_winter:       [1.16, 1.10, 1.00, 0.94, 0.88, 0.84, 0.86, 0.90, 0.96, 1.06, 1.14, 1.20]
+  regional_steady:   [1.00, 0.98, 1.00, 1.00, 1.02, 1.00, 1.02, 1.02, 0.98, 1.00, 1.02, 1.02]
+  gulf_steady:       [1.02, 1.00, 1.02, 1.04, 1.00, 0.96, 1.06, 1.04, 0.98, 1.00, 1.02, 1.04]
+  hajj_peak:         [0.90, 0.90, 0.92, 0.98, 1.10, 1.34, 1.30, 0.96, 0.90, 0.90, 0.92, 0.94]
+
+# Solver controls.
+solver:
+  max_seconds: 120
+  num_workers: 8
+  # Relative MIP gap at which the solver may stop early.
+  relative_gap: 0.005

@@ -1,0 +1,26 @@
+# Hub structure for connection/banking and rotation strategies.
+#
+# Tier 1 (public proxy). Hubs are the airports strategy experiments may route
+# passengers through; the model has no manually-curated timetable, so connection
+# feasibility is computed from a coarse daypart-bucket clock (see
+# anos.network.dayparts), not real published departure times.
+
+hubs:
+  primary: [DEL, BOM]
+  # Candidate secondary regional hubs for a "star" topology serving South India.
+  # Passed to the same connection-candidate builder as the primary hubs -- a
+  # secondary hub is a parameter, not a different mechanism.
+  secondary_candidates: [BLR, HYD, MAA]
+
+# The day is split into this many equal buckets for banking-feasibility purposes.
+# A market's chosen daypart is a solver decision (one of these buckets), not a
+# manually assigned timetable slot.
+daypart_buckets: 4
+
+# A connection is schedule-feasible only if the layover -- computed from each
+# leg's bucket midpoint, timezone-adjusted -- falls in this window. Too short and
+# a real passenger (and their bag) cannot make it; too long and it is not really
+# "banked", just two unrelated flights that happen to share an airport.
+connection_window:
+  min_layover_h: 1.0
+  max_layover_h: 8.0

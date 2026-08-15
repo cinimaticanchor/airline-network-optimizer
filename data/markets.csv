@@ -1,0 +1,118 @@
+# Air India addressable O&D markets.
+#
+# base_daily_demand -- pax per day EACH WAY that Air India could reasonably capture
+#   at a baseline schedule quality (see `frequency_ref` in cost_params.yaml). This is
+#   a PUBLIC-DATA PROXY built from DGCA traffic statistics, published schedules and
+#   market-share estimates. Replace with real PSS/GDS O&D booking data in Tier 2.
+# avg_fare_usd -- blended one-way yield across cabins, net of taxes.
+# business_mix -- share of demand that is time-sensitive (drives frequency elasticity).
+# competition_index -- 0 (monopoly) to 1 (heavily contested).
+# min_daily_freq -- strategic/regulatory floor the network must maintain.
+# strategic -- flagship route the airline will hold regardless of marginal economics.
+# interline_available -- STATED PLACEHOLDER, not a real partner agreement: flags
+#   markets with no domestic feeder at any hub we control (see
+#   anos.network.itinerary.build_connection_candidates), where a partner/codeshare
+#   itinerary is the only plausible way to sell this O&D at all. Opt-in via
+#   solve_network(enable_interline=True).
+market_id,origin,destination,region,base_daily_demand,avg_fare_usd,business_mix,competition_index,min_daily_freq,max_daily_freq,seasonality_profile,strategic,interline_available
+DEL-BOM,DEL,BOM,domestic_trunk,2600,88,0.62,0.85,8,26,domestic_business,yes,no
+DEL-BLR,DEL,BLR,domestic_trunk,2050,97,0.60,0.82,6,20,domestic_business,yes,no
+DEL-MAA,DEL,MAA,domestic_trunk,1150,94,0.52,0.78,4,14,domestic_business,no,no
+DEL-HYD,DEL,HYD,domestic_trunk,1250,86,0.56,0.80,4,14,domestic_business,no,no
+DEL-CCU,DEL,CCU,domestic_trunk,1300,79,0.48,0.76,4,14,domestic_vfr,no,no
+DEL-AMD,DEL,AMD,domestic_trunk,760,68,0.55,0.74,3,10,domestic_business,no,no
+DEL-PNQ,DEL,PNQ,domestic_trunk,690,77,0.58,0.72,2,9,domestic_business,no,no
+DEL-COK,DEL,COK,domestic,540,104,0.38,0.62,2,7,leisure_winter,no,no
+DEL-TRV,DEL,TRV,domestic,300,108,0.34,0.55,1,5,leisure_winter,no,no
+DEL-GOX,DEL,GOX,domestic,620,84,0.20,0.70,2,10,leisure_winter,no,no
+DEL-JAI,DEL,JAI,domestic_regional,210,44,0.45,0.55,1,5,domestic_business,no,no
+DEL-LKO,DEL,LKO,domestic_regional,360,47,0.44,0.62,2,7,domestic_vfr,no,no
+DEL-IXC,DEL,IXC,domestic_regional,230,42,0.50,0.50,1,5,domestic_business,no,no
+DEL-SXR,DEL,SXR,domestic_regional,420,58,0.22,0.58,2,7,leisure_summer,yes,no
+DEL-PAT,DEL,PAT,domestic_regional,430,55,0.30,0.60,2,7,domestic_vfr,no,no
+DEL-VNS,DEL,VNS,domestic_regional,280,52,0.26,0.55,1,5,leisure_winter,no,no
+DEL-GAU,DEL,GAU,domestic_regional,380,72,0.40,0.58,2,6,domestic_vfr,yes,no
+DEL-BBI,DEL,BBI,domestic_regional,290,64,0.42,0.56,1,5,domestic_business,no,no
+DEL-NAG,DEL,NAG,domestic_regional,210,58,0.48,0.52,1,4,domestic_business,no,no
+DEL-IDR,DEL,IDR,domestic_regional,200,56,0.47,0.52,1,4,domestic_business,no,no
+DEL-IXM,DEL,IXM,domestic_regional,140,79,0.36,0.48,1,3,domestic_vfr,no,no
+BOM-BLR,BOM,BLR,domestic_trunk,1750,66,0.63,0.84,6,18,domestic_business,no,no
+BOM-MAA,BOM,MAA,domestic_trunk,880,63,0.58,0.78,3,12,domestic_business,no,no
+BOM-HYD,BOM,HYD,domestic_trunk,760,58,0.60,0.76,3,11,domestic_business,no,no
+BOM-CCU,BOM,CCU,domestic_trunk,690,84,0.50,0.74,2,10,domestic_business,no,no
+BOM-COK,BOM,COK,domestic,480,66,0.42,0.66,2,8,leisure_winter,no,no
+BOM-AMD,BOM,AMD,domestic_regional,430,42,0.56,0.70,2,8,domestic_business,no,no
+BOM-GOX,BOM,GOX,domestic,540,40,0.24,0.72,2,10,leisure_winter,no,no
+BOM-TRV,BOM,TRV,domestic,260,72,0.38,0.58,1,5,leisure_winter,no,no
+BOM-JAI,BOM,JAI,domestic_regional,180,58,0.44,0.54,1,4,domestic_business,no,no
+BLR-MAA,BLR,MAA,domestic_regional,420,38,0.62,0.74,2,9,domestic_business,no,no
+BLR-HYD,BLR,HYD,domestic_regional,470,40,0.62,0.76,2,10,domestic_business,no,no
+BLR-CCU,BLR,CCU,domestic,470,88,0.52,0.68,2,7,domestic_business,no,no
+BLR-COK,BLR,COK,domestic_regional,290,44,0.48,0.62,1,6,domestic_business,no,no
+BLR-GOX,BLR,GOX,domestic_regional,190,40,0.28,0.62,1,5,leisure_winter,no,no
+MAA-COK,MAA,COK,domestic_regional,220,42,0.46,0.58,1,5,domestic_business,no,no
+MAA-HYD,MAA,HYD,domestic_regional,280,40,0.58,0.68,1,7,domestic_business,no,no
+CCU-GAU,CCU,GAU,domestic_regional,260,44,0.38,0.56,1,6,domestic_vfr,no,no
+CCU-BBI,CCU,BBI,domestic_regional,150,36,0.44,0.50,1,4,domestic_business,no,no
+DEL-LHR,DEL,LHR,longhaul_europe,940,615,0.42,0.72,2,5,intl_summer,yes,no
+BOM-LHR,BOM,LHR,longhaul_europe,720,640,0.44,0.74,2,4,intl_summer,yes,no
+BLR-LHR,BLR,LHR,longhaul_europe,340,660,0.46,0.62,1,2,intl_summer,no,no
+MAA-LHR,MAA,LHR,longhaul_europe,190,655,0.40,0.55,0,1,intl_summer,no,no
+AMD-LHR,AMD,LHR,longhaul_europe,160,600,0.30,0.48,0,1,intl_summer,no,no
+DEL-LGW,DEL,LGW,longhaul_europe,240,560,0.24,0.60,0,2,intl_summer,no,no
+DEL-BHX,DEL,BHX,longhaul_europe,150,585,0.26,0.42,0,1,intl_summer,no,yes
+DEL-FRA,DEL,FRA,longhaul_europe,460,595,0.48,0.70,1,3,intl_summer,no,no
+BOM-FRA,BOM,FRA,longhaul_europe,290,610,0.50,0.68,1,2,intl_summer,no,no
+DEL-CDG,DEL,CDG,longhaul_europe,370,600,0.44,0.68,1,2,intl_summer,no,no
+DEL-AMS,DEL,AMS,longhaul_europe,290,580,0.46,0.66,1,2,intl_summer,no,no
+DEL-MUC,DEL,MUC,longhaul_europe,210,590,0.48,0.60,0,2,intl_summer,no,no
+DEL-ZRH,DEL,ZRH,longhaul_europe,190,640,0.50,0.56,0,1,intl_summer,no,no
+DEL-CPH,DEL,CPH,longhaul_europe,140,605,0.46,0.50,0,1,intl_summer,no,yes
+DEL-VIE,DEL,VIE,longhaul_europe,160,585,0.46,0.54,0,1,intl_summer,no,no
+DEL-MXP,DEL,MXP,longhaul_europe,180,570,0.40,0.56,0,1,intl_summer,no,yes
+DEL-TLV,DEL,TLV,longhaul_europe,130,520,0.44,0.44,0,1,intl_summer,no,no
+DEL-JFK,DEL,JFK,longhaul_americas,620,865,0.40,0.68,1,3,intl_summer,yes,no
+BOM-JFK,BOM,JFK,longhaul_americas,450,885,0.42,0.70,1,2,intl_summer,yes,no
+DEL-EWR,DEL,EWR,longhaul_americas,500,840,0.38,0.66,1,2,intl_summer,no,no
+BOM-EWR,BOM,EWR,longhaul_americas,300,855,0.40,0.64,0,2,intl_summer,no,no
+DEL-SFO,DEL,SFO,longhaul_americas,430,905,0.44,0.58,1,2,intl_summer,yes,no
+BLR-SFO,BLR,SFO,longhaul_americas,310,955,0.50,0.52,0,1,intl_summer,no,no
+DEL-ORD,DEL,ORD,longhaul_americas,390,825,0.40,0.60,1,2,intl_summer,no,no
+DEL-IAD,DEL,IAD,longhaul_americas,290,835,0.42,0.56,0,2,intl_summer,no,no
+DEL-YYZ,DEL,YYZ,longhaul_americas,370,790,0.34,0.58,1,2,intl_summer,no,no
+BOM-YYZ,BOM,YYZ,longhaul_americas,210,805,0.34,0.52,0,1,intl_summer,no,no
+DEL-YVR,DEL,YVR,longhaul_americas,240,820,0.32,0.50,0,1,intl_summer,no,yes
+DEL-SYD,DEL,SYD,longhaul_pacific,290,785,0.38,0.54,0,2,intl_winter,no,yes
+DEL-MEL,DEL,MEL,longhaul_pacific,260,775,0.38,0.52,0,1,intl_winter,no,yes
+DEL-NRT,DEL,NRT,longhaul_asia,230,700,0.52,0.54,0,1,intl_summer,no,no
+DEL-HND,DEL,HND,longhaul_asia,190,730,0.56,0.52,0,1,intl_summer,no,no
+DEL-ICN,DEL,ICN,longhaul_asia,180,650,0.50,0.48,0,1,intl_summer,no,no
+DEL-HKG,DEL,HKG,regional_asia,270,470,0.52,0.58,0,2,intl_summer,no,no
+DEL-SIN,DEL,SIN,regional_asia,610,395,0.50,0.72,1,3,regional_steady,no,no
+BOM-SIN,BOM,SIN,regional_asia,420,375,0.52,0.70,1,2,regional_steady,no,no
+BLR-SIN,BLR,SIN,regional_asia,450,360,0.54,0.68,1,2,regional_steady,no,no
+MAA-SIN,MAA,SIN,regional_asia,400,350,0.50,0.66,1,2,regional_steady,no,no
+DEL-BKK,DEL,BKK,regional_asia,480,300,0.32,0.74,1,3,leisure_winter,no,no
+BOM-BKK,BOM,BKK,regional_asia,320,295,0.34,0.70,1,2,leisure_winter,no,no
+DEL-KUL,DEL,KUL,regional_asia,220,320,0.40,0.62,0,1,regional_steady,no,no
+DEL-DXB,DEL,DXB,gulf,1080,255,0.44,0.82,3,8,gulf_steady,no,no
+BOM-DXB,BOM,DXB,gulf,1280,235,0.46,0.84,4,10,gulf_steady,no,no
+COK-DXB,COK,DXB,gulf,760,225,0.28,0.76,2,6,gulf_steady,no,no
+BLR-DXB,BLR,DXB,gulf,540,245,0.42,0.74,2,5,gulf_steady,no,no
+MAA-DXB,MAA,DXB,gulf,430,240,0.38,0.72,1,4,gulf_steady,no,no
+HYD-DXB,HYD,DXB,gulf,400,245,0.40,0.70,1,4,gulf_steady,no,no
+DEL-AUH,DEL,AUH,gulf,360,250,0.42,0.68,1,3,gulf_steady,no,no
+BOM-AUH,BOM,AUH,gulf,390,235,0.44,0.70,1,3,gulf_steady,no,no
+DEL-DOH,DEL,DOH,gulf,340,255,0.44,0.72,1,3,gulf_steady,no,no
+BOM-DOH,BOM,DOH,gulf,330,245,0.44,0.70,1,3,gulf_steady,no,no
+COK-DOH,COK,DOH,gulf,380,230,0.26,0.68,1,3,gulf_steady,no,no
+DEL-JED,DEL,JED,gulf,290,320,0.20,0.58,1,2,hajj_peak,no,no
+BOM-JED,BOM,JED,gulf,260,310,0.20,0.56,0,2,hajj_peak,no,no
+DEL-RUH,DEL,RUH,gulf,230,300,0.38,0.56,0,2,gulf_steady,no,no
+DEL-KTM,DEL,KTM,regional_saarc,290,175,0.36,0.64,1,3,leisure_summer,yes,no
+DEL-CMB,DEL,CMB,regional_saarc,210,235,0.38,0.58,0,2,leisure_winter,no,no
+BLR-CMB,BLR,CMB,regional_saarc,160,205,0.40,0.52,0,1,leisure_winter,no,no
+MAA-CMB,MAA,CMB,regional_saarc,240,185,0.38,0.60,1,3,leisure_winter,no,no
+DEL-DAC,DEL,DAC,regional_saarc,220,215,0.44,0.60,0,2,regional_steady,no,no
+BLR-MLE,BLR,MLE,regional_saarc,150,255,0.16,0.54,0,1,leisure_winter,no,no
+BOM-MLE,BOM,MLE,regional_saarc,170,265,0.16,0.56,0,1,leisure_winter,no,no

@@ -1,0 +1,70 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Set up environment",
+      "type": "shell",
+      "command": "python3 -m venv .venv && .venv/bin/pip install -e '.[dev]'",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Validate reference data",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/anos validate",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Run tests",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/python -m pytest -q",
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Lint",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/ruff check src tests",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Solve network",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/anos solve --date ${input:planDate}",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Feasibility check",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/anos feasibility --date ${input:planDate}",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Scenario suite",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/anos scenarios --date ${input:planDate}",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Build HTML report",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/anos report --date ${input:planDate}",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "planDate",
+      "type": "promptString",
+      "description": "Date to build the plan against (YYYY-MM-DD)",
+      "default": "2027-03-01"
+    }
+  ]
+}

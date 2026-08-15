@@ -1,0 +1,22 @@
+# Time-space network fleet assignment (opt-in, anos.optimize.timespace_assignment).
+#
+# The day is split into this many equal buckets on one shared reference clock (not
+# each station's local time -- see anos.network.timespace_clock's module docstring
+# for why that distinction matters here); a market's chosen departure bucket is a
+# solver decision, not a curated timetable. This is a coarser, second clock from the
+# 4-bucket one in hub_topology.yaml (used only for connection-feasibility checking,
+# where a single hub's local time is all that matters) -- this one enforces real
+# fleet-count flow-balance across every station at once, so it is deliberately finer.
+# 8 buckets (3h) is the validated first increment; widen only after benchmarking at
+# this scope (see timespace_assignment's module docstring for the variable-count
+# trade-off).
+buckets: 8
+
+# Debugging convenience ONLY -- see the "any cross-section works" invariant in
+# anos.network.timespace_clock.straddles_anchor. The fleet-count cap counts aircraft
+# crossing one fixed point on the reference clock; in a closed, flow-conserving
+# cyclic network that count is identical at every cross-section, so this choice
+# never changes the answer. It exists purely so "N aircraft in the network at cut
+# time" reads sensibly to a human. Do not "optimize" this value -- it is not
+# load-bearing.
+anchor_hour: 3.0

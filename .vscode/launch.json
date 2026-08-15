@@ -1,0 +1,93 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "anos: validate reference data",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "anos.cli",
+      "args": ["validate"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": { "PYTHONPATH": "${workspaceFolder}/src" }
+    },
+    {
+      "name": "anos: fleet snapshot",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "anos.cli",
+      "args": ["fleet", "--date", "2027-03-01"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": { "PYTHONPATH": "${workspaceFolder}/src" }
+    },
+    {
+      "name": "anos: solve network",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "anos.cli",
+      "args": ["solve", "--date", "2027-03-01", "--top", "20"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": { "PYTHONPATH": "${workspaceFolder}/src" }
+    },
+    {
+      "name": "anos: solve (prompt for date)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "anos.cli",
+      "args": ["solve", "--date", "${input:planDate}"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": { "PYTHONPATH": "${workspaceFolder}/src" }
+    },
+    {
+      "name": "anos: feasibility check",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "anos.cli",
+      "args": ["feasibility", "--date", "2027-03-01"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": { "PYTHONPATH": "${workspaceFolder}/src" }
+    },
+    {
+      "name": "anos: scenario suite",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "anos.cli",
+      "args": ["scenarios", "--date", "2027-03-01"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": { "PYTHONPATH": "${workspaceFolder}/src" }
+    },
+    {
+      "name": "anos: write HTML report",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "anos.cli",
+      "args": ["report", "--date", "2027-03-01"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": { "PYTHONPATH": "${workspaceFolder}/src" }
+    },
+    {
+      "name": "pytest: current file",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["${file}", "-v"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": { "PYTHONPATH": "${workspaceFolder}/src" }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "planDate",
+      "type": "promptString",
+      "description": "Date to build the plan against (YYYY-MM-DD)",
+      "default": "2027-03-01"
+    }
+  ]
+}

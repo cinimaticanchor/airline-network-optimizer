@@ -1,0 +1,48 @@
+# Long-range demand growth assumptions, for anos.planning.scenario_ladder.
+#
+# STATED ASSUMPTION, researched 2026-08, not fitted/derived from Air India's own
+# booking data:
+#   - India domestic: ~155M passengers (2024) -> ~300-350M (2030) per
+#     ministerial/DGCA-adjacent statements and IndiGo's own public forecast, i.e. a
+#     CAGR of roughly 11.6-14.5%/year. We use 11% as a conservative point estimate.
+#   - Global long-run: Airbus Global Market Forecast 2026-2045 cites ~3.9%/year
+#     traffic growth, tied to ~2.6%/year global GDP growth.
+# Near-term India-specific growth is assumed to decay toward the mature global rate
+# over time (a market growing this fast cannot keep compounding at 11%/year for two
+# decades), not held flat -- see anos.forecast.demand_growth's decay formula.
+#
+# Every Market.region value in data/markets.csv MUST resolve to a bucket here;
+# validate_reference_data() hard-fails on an unmapped region rather than silently
+# defaulting one, the same convention as an unknown airport/type reference.
+
+anchor_year: 2026
+
+buckets:
+  india_domestic:
+    near_term_cagr: 0.11
+    long_run_cagr: 0.039
+    decay_half_life_years: 6
+  india_regional_international:
+    near_term_cagr: 0.08
+    long_run_cagr: 0.039
+    decay_half_life_years: 6
+  gulf_corridor:
+    near_term_cagr: 0.06
+    long_run_cagr: 0.035
+    decay_half_life_years: 5
+  global_longhaul:
+    near_term_cagr: 0.045
+    long_run_cagr: 0.039
+    decay_half_life_years: 4
+
+region_bucket_map:
+  domestic_trunk: india_domestic
+  domestic: india_domestic
+  domestic_regional: india_domestic
+  regional_saarc: india_regional_international
+  regional_asia: india_regional_international
+  gulf: gulf_corridor
+  longhaul_europe: global_longhaul
+  longhaul_americas: global_longhaul
+  longhaul_pacific: global_longhaul
+  longhaul_asia: global_longhaul

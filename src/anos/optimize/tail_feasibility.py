@@ -1,0 +1,482 @@
+"""Can this plan actually be flown by real airframes?
+
+The fleet-assignment model works in aggregate aircraft-hours. That is the right
+abstraction for choosing frequencies and aircraft types, but it will happily produce a
+plan that no sequence of real tail numbers can operate: a fleet pinned at 100%
+utilisation has no slack to absorb a single delay, and an aircraft cannot fly if it is
+due an A-check tonight.
+
+This module is the gate between "profitable on paper" and "operable". It does not
+build a tail-by-tail rotation -- that belongs in the operations system that owns real
+maintenance due-dates and crew rosters. It checks the conditions under which such a
+rotation is *possible*, and reports what would break.
+
+Findings are graded:
+  blocker -- the plan cannot be operated and must go back to the optimiser
+  warning -- operable but fragile; a planner should look before publishing
+  info    -- a structural characteristic worth knowing about
+"""
+
+from __future__ import annotations
+
+from anos.config import Params, load_params
+from anos.costs.economics import build_economics
+from anos.data.fleet_timeline import fleet_on
+from anos.data.loaders import (
+    load_aircraft_types,
+    load_airports,
+    load_maintenance_programmes,
+    load_markets,
+)
+from anos.models import (
+    FeasibilityFinding,
+    FeasibilityReport,
+    FleetSnapshot,
+    Market,
+    NetworkPlan,
+)
+
+# Above this share of available aircraft-hours there is no slack left for delay
+# recovery; a single AOG cascades through the day.
+UTILISATION_BLOCKER = 1.0001
+UTILISATION_WARNING = 0.95
+
+# A fleet type carrying the network on very few airframes is a single point of failure.
+FRAGILE_FLEET_COUNT = 3
+
+# Spilling more than this share of a market's demand means the plan is leaving
+# money on the table, not just running full.
+SPILL_WARNING = 0.15
+
+
+def check_plan(
+    plan: NetworkPlan,
+    *,
+    fleet: FleetSnapshot | None = None,
+    params: Params | None = None,
+) -> FeasibilityReport:
+    """Assess whether a solved network plan is operationally realistic."""
+    par = params or load_params()
+    snapshot = fleet or fleet_on(plan.as_of, params=par)
+    types = load_aircraft_types()
+    ports = load_airports()
+    markets = {m.market_id: m for m in load_markets()}
+    economics = build_economics(params=par)
+    programmes = load_maintenance_programmes()
+
+    report = FeasibilityReport()
+
+    _check_utilisation(plan, report)
+    _check_maintenance_load(plan, snapshot, economics, programmes, types, report)
+    _check_slots(plan, markets, ports, report)
+    _check_slot_opportunity_cost(plan, markets, ports, economics, par, report)
+    _check_fleet_fragility(plan, snapshot, types, markets, report)
+    _check_commercial_health(plan, markets, par, report)
+    _check_rotation_shape(plan, economics, types, report)
+    _check_payload_range(plan, economics, types, par, report)
+
+    return report
+
+
+def _check_utilisation(plan: NetworkPlan, report: FeasibilityReport) -> None:
+    """Utilisation against available aircraft-hours."""
+    for code, used in sorted(plan.fleet_used.items()):
+        available = plan.fleet_available.get(code, 0.0)
+        if available <= 0:
+            report.findings.append(
+                FeasibilityFinding(
+                    severity="blocker",
+                    category="fleet capacity",
+                    subject=code,
+                    detail=(
+                        f"plan flies {used:,.0f} aircraft-hours/day of {code} but the "
+                        "fleet timeline shows none available on this date"
+                    ),
+                )
+            )
+            continue
+
+        ratio = used / available
+        if ratio > UTILISATION_BLOCKER:
+            report.findings.append(
+                FeasibilityFinding(
+                    severity="blocker",
+                    category="fleet capacity",
+                    subject=code,
+                    detail=(
+                        f"{code} utilisation is {ratio:.1%} of available hours "
+                        f"({used:,.0f} h/day required, {available:,.0f} h/day available)"
+                    ),
+                )
+            )
+        elif ratio > UTILISATION_WARNING:
+            report.findings.append(
+                FeasibilityFinding(
+                    severity="warning",
+                    category="fleet capacity",
+                    subject=code,
+                    detail=(
+                        f"{code} runs at {ratio:.1%} of available hours, leaving almost "
+                        "no slack to recover a delay or absorb an unplanned removal"
+                    ),
+                )
+            )
+
+
+def _check_maintenance_load(
+    plan: NetworkPlan,
+    snapshot: FleetSnapshot,
+    economics: dict,
+    programmes: dict,
+    types: dict,
+    report: FeasibilityReport,
+) -> None:
+    """A-check demand generated by the plan, against overnight ground time.
+
+    A-checks are worked overnight, so they are affordable only if the type's planned
+    daily utilisation leaves a long enough night on the ground.
+    """
+    block_hours_by_type: dict[str, float] = {}
+    for mp in plan.market_plans:
+        for code, n in mp.frequencies.items():
+            econ = economics.get((mp.market_id, code))
+            if econ:
+                block_hours_by_type[code] = (
+                    block_hours_by_type.get(code, 0.0) + econ.block_hours_round_trip * n
+                )
+
+    for code, daily_fh in sorted(block_hours_by_type.items()):
+        ac = types[code]
+        prog = programmes[code]
+        checks_per_day = daily_fh / prog.a_check_interval_fh
+        report.maintenance_hours_required[code] = checks_per_day * prog.a_check_downtime_h
+
+        overnight_available = 24.0 - ac.max_daily_util_h
+        if prog.a_check_downtime_h > overnight_available:
+            report.findings.append(
+                FeasibilityFinding(
+                    severity="warning",
+                    category="maintenance",
+                    subject=code,
+                    detail=(
+                        f"an A-check takes {prog.a_check_downtime_h:.0f} h but planned "
+                        f"utilisation of {ac.max_daily_util_h:.1f} h/day leaves only "
+                        f"{overnight_available:.1f} h on the ground -- checks will cost "
+                        f"flying days, which the {checks_per_day:.1f} checks/day this "
+                        "plan generates does not currently account for"
+                    ),
+                )
+            )
+
+        fleet_count = snapshot.available.get(code, 0.0)
+        if fleet_count > 0 and checks_per_day > fleet_count * 0.15:
+            report.findings.append(
+                FeasibilityFinding(
+                    severity="warning",
+                    category="maintenance",
+                    subject=code,
+                    detail=(
+                        f"plan generates {checks_per_day:.1f} A-checks/day across "
+                        f"{fleet_count:.0f} available {code} airframes -- confirm line "
+                        "maintenance has the hangar slots and manpower"
+                    ),
+                )
+            )
+
+
+def slot_usage_by_airport(plan: NetworkPlan, markets: dict[str, Market]) -> dict[str, int]:
+    """Daily departure-slot consumption at each airport under this plan.
+
+    Shared accounting path for `_check_slots` here and for
+    `anos.planning.constraint_detection`'s slot-saturation guard, so both agree on
+    what "used" means.
+    """
+    usage: dict[str, int] = {}
+    for mp in plan.market_plans:
+        if mp.total_frequency == 0:
+            continue
+        market = markets[mp.market_id]
+        for iata in (market.origin, market.destination):
+            usage[iata] = usage.get(iata, 0) + mp.total_frequency
+    return usage
+
+
+def _check_slots(plan: NetworkPlan, markets: dict, ports: dict, report: FeasibilityReport) -> None:
+    """Departure slots consumed at each airport."""
+    usage = slot_usage_by_airport(plan, markets)
+    report.slot_usage = usage
+
+    for iata, used in sorted(usage.items()):
+        cap = ports[iata].daily_slot_cap
+        if used > cap:
+            report.findings.append(
+                FeasibilityFinding(
+                    severity="blocker",
+                    category="slots",
+                    subject=iata,
+                    detail=f"{used} daily departures planned against an allocation of {cap}",
+                )
+            )
+        elif used >= cap * 0.95:
+            report.findings.append(
+                FeasibilityFinding(
+                    severity="warning",
+                    category="slots",
+                    subject=iata,
+                    detail=(
+                        f"{used} of {cap} daily departure slots used at {iata}"
+                        f"{' (slot-coordinated)' if ports[iata].slot_constrained else ''} "
+                        "-- no room to add frequency without acquiring slots"
+                    ),
+                )
+            )
+
+
+def _check_payload_range(
+    plan: NetworkPlan,
+    economics: dict,
+    types: dict,
+    params: Params,
+    report: FeasibilityReport,
+) -> None:
+    """Sectors flown close to the aircraft's usable range.
+
+    Near the limit an aircraft trades payload for fuel: cargo is left behind and,
+    on the worst sectors, seats are blocked. The optimiser prices these sectors at
+    full seat count, so their economics are overstated. Until a payload-range curve
+    is available per type, the honest thing is to name the sectors where that
+    overstatement applies.
+    """
+    threshold = params.payload_penalty_threshold
+    for mp in plan.market_plans:
+        for code in mp.frequencies:
+            econ = economics.get((mp.market_id, code))
+            if not econ:
+                continue
+            usable = types[code].range_km * params.range_safety_factor
+            ratio = econ.distance_km / usable
+            if ratio >= threshold:
+                report.findings.append(
+                    FeasibilityFinding(
+                        severity="warning",
+                        category="payload-range",
+                        subject=f"{mp.market_id} / {code}",
+                        detail=(
+                            f"sector is {ratio:.0%} of the {code}'s usable range "
+                            f"({econ.distance_km:,.0f} km of {usable:,.0f} km) -- it will be "
+                            "flown payload-limited, so the full-seat revenue assumed here "
+                            "overstates what the route actually earns"
+                        ),
+                    )
+                )
+
+
+def _check_slot_opportunity_cost(
+    plan: NetworkPlan,
+    markets: dict,
+    ports: dict,
+    economics: dict,
+    params: Params,
+    report: FeasibilityReport,
+) -> None:
+    """What a slot at a saturated airport is being spent on, versus what it could earn.
+
+    When Delhi and Mumbai run out of departure slots, every slot held by a thin route
+    is a slot unavailable to a trunk route that is spilling demand. The optimiser
+    already makes this trade wherever it is free to; where it is *not* free -- a
+    minimum service floor on a regulated or strategic route -- the cost of that
+    obligation is invisible in the plan's bottom line.
+
+    This surfaces it: for each saturated airport, compare the worst-earning slot in
+    use against the best available redeployment, and price the difference.
+    """
+    for iata, used in sorted(report.slot_usage.items()):
+        cap = ports[iata].daily_slot_cap
+        if used < cap * 0.95:
+            continue
+
+        touching = [
+            mp
+            for mp in plan.market_plans
+            if iata in (markets[mp.market_id].origin, markets[mp.market_id].destination)
+        ]
+        served = [mp for mp in touching if mp.total_frequency > 0]
+        if not served:
+            continue
+
+        worst = min(served, key=lambda mp: mp.contribution_usd / mp.total_frequency)
+        worst_per_slot = worst.contribution_usd / worst.total_frequency
+
+        best_gain, best_market = 0.0, None
+        for mp in touching:
+            market = markets[mp.market_id]
+            if mp.total_frequency >= market.max_daily_freq or mp.spilled_demand <= 0:
+                continue
+
+            # Price the extra frequency using the type already flying the market,
+            # or the cheapest eligible type if it is currently unserved.
+            if mp.frequencies:
+                code = max(mp.frequencies, key=lambda c: mp.frequencies[c])
+            else:
+                eligible = [t for (m, t) in economics if m == mp.market_id]
+                if not eligible:
+                    continue
+                code = min(eligible, key=lambda t: economics[(mp.market_id, t)].cost_per_round_trip_usd)
+
+            econ = economics[(mp.market_id, code)]
+            is_domestic = (
+                ports[market.origin].is_domestic and ports[market.destination].is_domestic
+            )
+            margin = market.avg_fare_usd - params.cost_per_pax(domestic=is_domestic)
+            extra_pax = min(mp.spilled_demand, econ.seats_round_trip)
+            gain = 2 * extra_pax * margin - econ.cost_per_round_trip_usd
+
+            if gain > best_gain:
+                best_gain, best_market = gain, mp.market_id
+
+        if best_market and best_gain > worst_per_slot:
+            uplift = best_gain - worst_per_slot
+            forced = markets[worst.market_id].min_daily_freq > 0
+            report.findings.append(
+                FeasibilityFinding(
+                    severity="warning",
+                    category="slot opportunity cost",
+                    subject=iata,
+                    detail=(
+                        f"{iata} is slot-saturated. Its weakest slot goes to "
+                        f"{worst.market_id} at {worst_per_slot:+,.0f} USD/day"
+                        f"{' (held by a minimum service floor)' if forced else ''}, "
+                        f"while {best_market} would earn {best_gain:,.0f} USD/day on one "
+                        f"more frequency -- a swap worth {uplift:,.0f} USD/day "
+                        f"({uplift * 365 / 1e6:,.1f}M/year)"
+                    ),
+                )
+            )
+
+
+def _check_fleet_fragility(
+    plan: NetworkPlan,
+    snapshot: FleetSnapshot,
+    types: dict,
+    markets: dict,
+    report: FeasibilityReport,
+) -> None:
+    """Markets that depend on a type with too few airframes to be robust."""
+    for mp in plan.market_plans:
+        for code in mp.frequencies:
+            count = snapshot.available.get(code, 0.0)
+            if 0 < count < FRAGILE_FLEET_COUNT:
+                report.findings.append(
+                    FeasibilityFinding(
+                        severity="warning",
+                        category="fleet robustness",
+                        subject=f"{mp.market_id} / {code}",
+                        detail=(
+                            f"only {count:.1f} {code} available -- a single removal takes "
+                            "this market down with no sub-fleet to cover it"
+                        ),
+                    )
+                )
+
+
+def _check_commercial_health(
+    plan: NetworkPlan, markets: dict, params: Params, report: FeasibilityReport
+) -> None:
+    """Loss-making routes, spilled demand and weak load factors."""
+    for mp in plan.market_plans:
+        if mp.total_frequency == 0:
+            market = markets[mp.market_id]
+            if market.strategic:
+                report.findings.append(
+                    FeasibilityFinding(
+                        severity="info",
+                        category="network",
+                        subject=mp.market_id,
+                        detail="strategic market carries no service in this plan",
+                    )
+                )
+            continue
+
+        if mp.contribution_usd < 0:
+            market = markets[mp.market_id]
+            reason = (
+                "held for strategic reasons"
+                if market.strategic
+                else f"forced by a minimum service floor of {market.min_daily_freq}/day"
+                if market.min_daily_freq > 0
+                else "unexpected -- the optimiser would normally drop this"
+            )
+            report.findings.append(
+                FeasibilityFinding(
+                    severity="info" if market.strategic or market.min_daily_freq else "warning",
+                    category="profitability",
+                    subject=mp.market_id,
+                    detail=(
+                        f"loses ${abs(mp.contribution_usd):,.0f}/day at "
+                        f"{mp.total_frequency}x daily; {reason}"
+                    ),
+                )
+            )
+
+        if mp.demand_effective > 0:
+            spill_share = mp.spilled_demand / mp.demand_effective
+            if spill_share > SPILL_WARNING:
+                report.findings.append(
+                    FeasibilityFinding(
+                        severity="warning",
+                        category="capacity",
+                        subject=mp.market_id,
+                        detail=(
+                            f"spilling {spill_share:.0%} of demand "
+                            f"({mp.spilled_demand:,.0f} pax/day each way) -- the market "
+                            "wants more capacity than the fleet can give it"
+                        ),
+                    )
+                )
+
+        if mp.seats_offered > 0 and mp.load_factor < params.target_load_factor * 0.75:
+            report.findings.append(
+                FeasibilityFinding(
+                    severity="warning",
+                    category="capacity",
+                    subject=mp.market_id,
+                    detail=(
+                        f"load factor {mp.load_factor:.0%} against a target of "
+                        f"{params.target_load_factor:.0%} -- aircraft is too large or "
+                        "frequency too high for the demand"
+                    ),
+                )
+            )
+
+
+def _check_rotation_shape(
+    plan: NetworkPlan, economics: dict, types: dict, report: FeasibilityReport
+) -> None:
+    """Round trips too long to complete inside one aircraft-day.
+
+    Ultra-long-haul round trips legitimately span more than a day of utilisation --
+    the aircraft-hours accounting handles that correctly -- but it means each daily
+    frequency ties up more than one airframe, which planners should see explicitly.
+    """
+    flagged: set[str] = set()
+    for mp in plan.market_plans:
+        for code in mp.frequencies:
+            econ = economics.get((mp.market_id, code))
+            if not econ:
+                continue
+            ac = types[code]
+            if econ.aircraft_hours_consumed > ac.max_daily_util_h and mp.market_id not in flagged:
+                airframes = econ.aircraft_hours_consumed / ac.max_daily_util_h
+                flagged.add(mp.market_id)
+                report.findings.append(
+                    FeasibilityFinding(
+                        severity="info",
+                        category="rotation",
+                        subject=f"{mp.market_id} / {code}",
+                        detail=(
+                            f"one daily round trip consumes {econ.aircraft_hours_consumed:.1f} h "
+                            f"against {ac.max_daily_util_h:.1f} h/day utilisation -- each "
+                            f"daily frequency ties up ~{airframes:.1f} airframes"
+                        ),
+                    )
+                )

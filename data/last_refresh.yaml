@@ -1,0 +1,13 @@
+# State for the monthly automated public-data refresh job (see the scheduled
+# Claude Code agent job "anos-monthly-data-refresh"). Read and updated directly by
+# that job's prompt, not by application code -- interpreting order/delivery/fuel
+# news prose reliably needs an LLM in the loop, not a rigid parser.
+#
+# last_run: ISO date of the last completed refresh (null until the first run)
+# summary: one-paragraph human-readable summary of what that run found and changed
+# sources_checked: list of {source, checked_on} the last run actually queried
+# data_changes: list of {file, change, reason, source} applied in the last run
+last_run: null
+summary: null
+sources_checked: []
+data_changes: []

@@ -1,0 +1,160 @@
+# Air India fleet and order book.
+#
+# IMPORTANT -- every figure here is a PUBLIC-SOURCE PROXY, not a system of record.
+# Air India publishes an updated fleet count monthly; the order book has been amended
+# since the original June 2023 order for 470 aircraft (a 100-aircraft Airbus top-up in
+# December 2024, plus ~70 aircraft absorbed from Vistara at merger).
+#
+# 2026-08 UPDATE (researched via public web search, not yet cross-checked against Air
+# India's own monthly PDF): Wings India 2026 (Jan 2026) brought two more tranches not
+# in the original order book above -- +30 Boeing 737 MAX (20 MAX 8, 10 MAX 10 -- a new
+# type/variant) and +12 Airbus A350-900 (exercised purchase options). See the new
+# `orders:` entries below, each tagged with its own confidence given how recent and,
+# for the MAX 10, how novel-to-fleet these are.
+#
+# Delivery dates below are FORECASTS derived from OEM guidance. Airbus and Boeing have
+# already slipped announced dates on this order book (777X, A350-1000, A321XLR).
+# The scenario engine exists precisely to stress-test these assumptions -- see
+# `anos.scenarios`. Re-pull Air India's own monthly fleet PDF before trusting any
+# absolute number here.
+#
+# as_of anchors every fleet-timeline computation in the model.
+
+as_of: 2026-07-01
+
+in_service:
+  A319: 6
+  A320ceo: 4
+  A320neo: 94
+  A321ceo: 13
+  A321neo: 10
+  A350-900: 6
+  B777-200LR: 3
+  B777-300ER: 19
+  B787-8: 26
+  B787-9: 6
+
+# Firm orders with a modelled delivery profile.
+#   start / end  -- window over which deliveries are spread
+#   rate_per_month -- optional explicit cadence; if omitted, spread evenly
+#   confidence   -- planner's subjective probability the programme holds its dates.
+#                   Used by the probabilistic fleet timeline; low confidence types
+#                   contribute expected (risk-adjusted) capacity, not nominal.
+orders:
+  - type: A320neo
+    count: 90
+    start: 2026-07-01
+    end: 2028-12-31
+    confidence: 0.90
+    note: Vihaan.AI order plus Dec-2024 Airbus top-up
+
+  - type: A321neo
+    count: 195
+    start: 2026-07-01
+    end: 2033-12-31
+    confidence: 0.85
+    note: Original 70-unit order plus Dec-2024 top-up
+
+  - type: A321XLR
+    count: 15
+    start: 2029-01-01
+    end: 2031-12-31
+    confidence: 0.60
+    note: Long-thin route play; deliveries from 2029, date already moved once
+
+  - type: A350-900
+    count: 19
+    start: 2026-07-01
+    end: 2027-12-31
+    confidence: 0.85
+
+  - type: A350-1000
+    count: 25
+    start: 2026-10-01
+    end: 2030-06-30
+    confidence: 0.70
+    note: Deliveries from FY2026-27; ultra-long-haul flagship
+
+  - type: B787-9
+    count: 20
+    start: 2026-07-01
+    end: 2029-12-31
+    confidence: 0.80
+    note: New-build deliveries running at roughly one widebody every six weeks
+
+  - type: B777-9
+    count: 10
+    start: 2027-06-01
+    end: 2030-12-31
+    confidence: 0.45
+    note: Gated on Boeing 777X certification, which has slipped repeatedly
+
+  - type: B737MAX8
+    count: 190
+    start: 2026-09-01
+    end: 2032-12-31
+    confidence: 0.75
+    note: Paced by Boeing MAX production ramp
+
+  - type: B737MAX8
+    count: 20
+    start: 2027-06-01
+    end: 2029-06-30
+    confidence: 0.80
+    note: Jan-2026 Wings India top-up (part of a 30-aircraft MAX order); incremental
+      units on an already-flying, in-production type, so a shorter lead time and
+      higher confidence than the original 2026 tranche above
+
+  - type: B737MAX10
+    count: 10
+    start: 2028-06-01
+    end: 2031-12-31
+    confidence: 0.55
+    note: Jan-2026 Wings India order, the other half of the 30-aircraft MAX top-up.
+      New variant/type to the fleet -- gated on MAX 10 certification, which (like
+      777X and A321XLR elsewhere in this file) has a real history of slipping, hence
+      the lower confidence than the MAX 8 top-up immediately above
+
+  - type: A350-900
+    count: 12
+    start: 2028-01-01
+    end: 2029-12-31
+    confidence: 0.80
+    note: Jan-2026 exercised purchase options, a second tranche on top of the
+      original 19-aircraft order above; assumed to start after that tranche's own
+      end date since it draws on the same A350 production line allocation
+
+# Planned retirements / permanent withdrawals.
+retirements:
+  - type: A319
+    count: 6
+    start: 2026-07-01
+    end: 2028-06-30
+  - type: A320ceo
+    count: 4
+    start: 2026-07-01
+    end: 2027-12-31
+  - type: A321ceo
+    count: 13
+    start: 2027-01-01
+    end: 2029-12-31
+  - type: B777-200LR
+    count: 3
+    start: 2027-01-01
+    end: 2029-06-30
+
+# Cabin retrofit programme -- aircraft are OUT OF SERVICE while in the shop.
+# This is real, current capacity loss that a naive fleet count would miss.
+retrofits:
+  - type: B787-8
+    count: 26
+    start: 2026-02-01
+    end: 2027-07-31
+    downtime_days: 45
+    note: All 26 legacy 787-8s to be reconfigured by July 2027
+  - type: B777-300ER
+    count: 19
+    start: 2026-01-01
+    end: 2027-07-31
+    downtime_days: 55
+    note: Cabin retrofit underway through July 2027

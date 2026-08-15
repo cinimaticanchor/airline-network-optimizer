@@ -1,0 +1,62 @@
+# Assumptions for anos.planning.fleet_expansion -- the NPV algorithm that turns a
+# persistent fleet-utilisation constraint (see constraint_detection.py) into a
+# sized, financially-evaluated candidate aircraft order.
+#
+# STATED ASSUMPTIONS, not fitted to Air India's real cost of capital or real OEM
+# slot negotiations:
+#   - discount_rate_annual: 9% is a generic airline-sector WACC-style planning rate,
+#     not Air India's actual cost of capital (not public).
+#   - lead_time_years: order-to-first-delivery time, by aircraft body, drawn from
+#     typical Boeing/Airbus narrowbody/widebody backlog experience this decade
+#     (~2.5y narrow, ~4y wide). Named overrides apply to the three programmes in
+#     this fleet with a real, documented history of certification/ramp slippage --
+#     the 777X (repeated delays), A350-1000 (newer widebody variant with a shorter
+#     Air India-specific track record than the -900), and B737MAX10 (not yet
+#     certified as of this data's research date).
+#   - delivery_window_years: once first delivery lands, mirrors the ~2-3 year
+#     delivery windows already used for real order tranches in fleet.yaml.
+
+discount_rate_annual: 0.09
+
+lead_time_years:
+  by_body:
+    narrow: 2.5
+    wide: 4.0
+  overrides:
+    B777-9: 5.0
+    A350-1000: 4.5
+    B737MAX10: 3.5
+
+delivery_window_years: 2.0
+
+detection:
+  # Matches anos.planning.constraint_detection.FLEET_UTILISATION_THRESHOLD --
+  # deliberately below tail_feasibility's own 0.95 utilisation-warning line, so an
+  # expansion trigger fires with runway to act before ops sees a warning.
+  fleet_utilisation_threshold: 0.90
+  # size_candidate adds aircraft until utilisation at the horizon's most-stressed
+  # checkpoint drops to at or below this -- a comfortable operating ceiling, not
+  # the bare minimum needed to clear the threshold above.
+  target_utilisation_ceiling: 0.80
+
+# cost_params.yaml's default solver.relative_gap (0.5%) is fine for a single day's
+# operational plan, but NPV_evaluate_candidate computes WITH-minus-WITHOUT on two
+# ~$8-11M/day network solves -- subtracting two large, independently-noisy numbers
+# amplifies that 0.5% gap into noise comparable to, or larger than, one aircraft's
+# true incremental contribution (confirmed empirically: identical candidates
+# evaluated back-to-back at the default gap swung between roughly -$7M and -$21M
+# NPV). fleet_expansion overrides the solver gap to this much tighter value for
+# every solve in its own pipeline -- it is a low-frequency, high-stakes batch
+# computation (Phase 5's monthly refresh, not an interactive daily replan), so the
+# extra solve time is worth it.
+financial_relative_gap: 0.0005
+
+sizing:
+  min_candidate_count: 1
+  max_candidate_count: 12
+
+review:
+  # A same-type order placed again within this many years of a prior one is
+  # flagged for human review rather than auto-approved back-to-back -- ordering
+  # timing can matter in ways this greedy, sequential algorithm does not model.
+  min_years_between_same_type_orders: 2

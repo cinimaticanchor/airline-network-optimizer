@@ -1,0 +1,60 @@
+iata,name,city,country,lat,lon,widebody_capable,slot_constrained,daily_slot_cap,curfew,timezone_offset_h
+DEL,Indira Gandhi Intl,Delhi,IN,28.5562,77.1000,yes,yes,120,no,5.5
+BOM,Chhatrapati Shivaji Maharaj Intl,Mumbai,IN,19.0887,72.8679,yes,yes,72,no,5.5
+BLR,Kempegowda Intl,Bengaluru,IN,13.1979,77.7063,yes,yes,90,no,5.5
+MAA,Chennai Intl,Chennai,IN,12.9941,80.1709,yes,no,60,no,5.5
+HYD,Rajiv Gandhi Intl,Hyderabad,IN,17.2403,78.4294,yes,no,60,no,5.5
+CCU,Netaji Subhas Chandra Bose Intl,Kolkata,IN,22.6547,88.4467,yes,no,48,no,5.5
+COK,Cochin Intl,Kochi,IN,10.1520,76.4019,yes,no,36,no,5.5
+AMD,Sardar Vallabhbhai Patel Intl,Ahmedabad,IN,23.0772,72.6347,yes,no,36,no,5.5
+PNQ,Pune,Pune,IN,18.5821,73.9197,no,yes,24,yes,5.5
+GOX,Manohar Intl,Goa,IN,15.7300,73.8600,yes,no,30,no,5.5
+JAI,Jaipur Intl,Jaipur,IN,26.8242,75.8122,no,no,24,no,5.5
+LKO,Chaudhary Charan Singh Intl,Lucknow,IN,26.7606,80.8893,no,no,24,no,5.5
+IXC,Chandigarh,Chandigarh,IN,30.6735,76.7885,no,no,18,yes,5.5
+SXR,Sheikh ul-Alam Intl,Srinagar,IN,33.9871,74.7742,no,no,18,yes,5.5
+PAT,Jay Prakash Narayan,Patna,IN,25.5913,85.0880,no,no,18,yes,5.5
+BBI,Biju Patnaik Intl,Bhubaneswar,IN,20.2444,85.8178,no,no,18,no,5.5
+GAU,Lokpriya Gopinath Bordoloi Intl,Guwahati,IN,26.1061,91.5859,no,no,24,no,5.5
+TRV,Trivandrum Intl,Thiruvananthapuram,IN,8.4821,76.9200,yes,no,24,no,5.5
+IXM,Madurai,Madurai,IN,9.8345,78.0934,no,no,12,no,5.5
+VNS,Lal Bahadur Shastri Intl,Varanasi,IN,25.4524,82.8593,no,no,18,no,5.5
+NAG,Dr Babasaheb Ambedkar Intl,Nagpur,IN,21.0922,79.0472,no,no,18,no,5.5
+IDR,Devi Ahilyabai Holkar,Indore,IN,22.7218,75.8011,no,no,18,no,5.5
+LHR,London Heathrow,London,GB,51.4700,-0.4543,yes,yes,80,yes,1.0
+LGW,London Gatwick,London,GB,51.1537,-0.1821,yes,yes,40,yes,1.0
+BHX,Birmingham,Birmingham,GB,52.4539,-1.7480,yes,no,18,yes,1.0
+JFK,John F Kennedy Intl,New York,US,40.6413,-73.7781,yes,yes,60,no,-4.0
+EWR,Newark Liberty Intl,Newark,US,40.6895,-74.1745,yes,yes,45,no,-4.0
+SFO,San Francisco Intl,San Francisco,US,37.6213,-122.3790,yes,no,40,no,-7.0
+ORD,Chicago O Hare Intl,Chicago,US,41.9742,-87.9073,yes,no,40,no,-5.0
+IAD,Washington Dulles Intl,Washington,US,38.9531,-77.4565,yes,no,30,no,-4.0
+YYZ,Toronto Pearson Intl,Toronto,CA,43.6777,-79.6248,yes,no,36,no,-4.0
+YVR,Vancouver Intl,Vancouver,CA,49.1967,-123.1815,yes,no,24,no,-7.0
+MEL,Melbourne,Melbourne,AU,-37.6690,144.8410,yes,no,24,no,10.0
+SYD,Sydney Kingsford Smith,Sydney,AU,-33.9399,151.1753,yes,yes,30,yes,10.0
+NRT,Tokyo Narita,Tokyo,JP,35.7720,140.3929,yes,yes,30,yes,9.0
+HND,Tokyo Haneda,Tokyo,JP,35.5494,139.7798,yes,yes,24,yes,9.0
+ICN,Incheon Intl,Seoul,KR,37.4602,126.4407,yes,no,30,no,9.0
+HKG,Hong Kong Intl,Hong Kong,HK,22.3080,113.9185,yes,yes,30,no,8.0
+SIN,Singapore Changi,Singapore,SG,1.3644,103.9915,yes,yes,40,no,8.0
+BKK,Suvarnabhumi,Bangkok,TH,13.6900,100.7501,yes,no,36,no,7.0
+KUL,Kuala Lumpur Intl,Kuala Lumpur,MY,2.7456,101.7099,yes,no,24,no,8.0
+DXB,Dubai Intl,Dubai,AE,25.2532,55.3657,yes,yes,60,no,4.0
+AUH,Zayed Intl,Abu Dhabi,AE,24.4330,54.6511,yes,no,30,no,4.0
+DOH,Hamad Intl,Doha,QA,25.2731,51.6081,yes,no,30,no,3.0
+JED,King Abdulaziz Intl,Jeddah,SA,21.6796,39.1565,yes,no,24,no,3.0
+RUH,King Khalid Intl,Riyadh,SA,24.9576,46.6988,yes,no,24,no,3.0
+FRA,Frankfurt am Main,Frankfurt,DE,50.0379,8.5622,yes,yes,50,yes,2.0
+MUC,Munich,Munich,DE,48.3537,11.7750,yes,yes,30,yes,2.0
+CDG,Paris Charles de Gaulle,Paris,FR,49.0097,2.5479,yes,yes,45,no,2.0
+AMS,Amsterdam Schiphol,Amsterdam,NL,52.3105,4.7683,yes,yes,40,yes,2.0
+ZRH,Zurich,Zurich,CH,47.4647,8.5492,yes,yes,24,yes,2.0
+CPH,Copenhagen Kastrup,Copenhagen,DK,55.6180,12.6508,yes,no,24,no,2.0
+VIE,Vienna Intl,Vienna,AT,48.1103,16.5697,yes,no,24,yes,2.0
+MXP,Milan Malpensa,Milan,IT,45.6306,8.7281,yes,no,24,no,2.0
+TLV,Ben Gurion,Tel Aviv,IL,32.0114,34.8867,yes,no,18,no,3.0
+CMB,Bandaranaike Intl,Colombo,LK,7.1808,79.8841,yes,no,24,no,5.5
+KTM,Tribhuvan Intl,Kathmandu,NP,27.6966,85.3591,no,yes,18,yes,5.75
+MLE,Velana Intl,Male,MV,4.1918,73.5291,yes,no,18,no,5.0
+DAC,Hazrat Shahjalal Intl,Dhaka,BD,23.8433,90.3978,yes,no,18,no,6.0

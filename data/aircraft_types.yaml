@@ -1,0 +1,330 @@
+# Aircraft type reference data.
+#
+# Sources: manufacturer published specs (Airbus/Boeing), typical two/three-class
+# configurations, and published industry benchmarks for turnaround and utilisation.
+# Fuel burn figures are average cruise burn and are directional -- replace with
+# Air India's own ACARS/fuel-log derived figures before these drive real decisions.
+
+types:
+  A319:
+    name: Airbus A319-100
+    body: narrow
+    seats: 122
+    range_km: 6900
+    cruise_kmh: 828
+    fuel_burn_kgh: 2300
+    min_turn_min: 35
+    max_daily_util_h: 10.0
+    ownership_cost_per_day_usd: 8000
+    crew_cost_per_block_hour_usd: 900
+    generation: legacy
+
+  A320ceo:
+    name: Airbus A320-200
+    body: narrow
+    seats: 168
+    range_km: 6100
+    cruise_kmh: 828
+    fuel_burn_kgh: 2500
+    min_turn_min: 40
+    max_daily_util_h: 10.5
+    ownership_cost_per_day_usd: 9000
+    crew_cost_per_block_hour_usd: 950
+    generation: legacy
+
+  A320neo:
+    name: Airbus A320neo
+    body: narrow
+    seats: 180
+    range_km: 6300
+    cruise_kmh: 833
+    fuel_burn_kgh: 2100
+    min_turn_min: 40
+    max_daily_util_h: 12.0
+    ownership_cost_per_day_usd: 11000
+    crew_cost_per_block_hour_usd: 950
+    generation: neo
+
+  A321ceo:
+    name: Airbus A321-200
+    body: narrow
+    seats: 200
+    range_km: 5900
+    cruise_kmh: 828
+    fuel_burn_kgh: 2900
+    min_turn_min: 45
+    max_daily_util_h: 10.5
+    ownership_cost_per_day_usd: 10000
+    crew_cost_per_block_hour_usd: 1000
+    generation: legacy
+
+  A321neo:
+    name: Airbus A321neo
+    body: narrow
+    seats: 222
+    range_km: 7400
+    cruise_kmh: 833
+    fuel_burn_kgh: 2500
+    min_turn_min: 45
+    max_daily_util_h: 12.0
+    ownership_cost_per_day_usd: 13000
+    crew_cost_per_block_hour_usd: 1000
+    generation: neo
+
+  A321XLR:
+    name: Airbus A321XLR
+    body: narrow
+    seats: 195
+    range_km: 8700
+    cruise_kmh: 833
+    fuel_burn_kgh: 2600
+    min_turn_min: 50
+    max_daily_util_h: 12.0
+    ownership_cost_per_day_usd: 15000
+    crew_cost_per_block_hour_usd: 1050
+    generation: neo
+
+  A350-900:
+    name: Airbus A350-900
+    body: wide
+    seats: 316
+    range_km: 15000
+    cruise_kmh: 903
+    fuel_burn_kgh: 5800
+    min_turn_min: 90
+    max_daily_util_h: 15.0
+    ownership_cost_per_day_usd: 38000
+    crew_cost_per_block_hour_usd: 2600
+    generation: new_widebody
+
+  A350-1000:
+    name: Airbus A350-1000
+    body: wide
+    seats: 395
+    range_km: 16100
+    cruise_kmh: 903
+    fuel_burn_kgh: 6600
+    min_turn_min: 100
+    max_daily_util_h: 15.0
+    ownership_cost_per_day_usd: 45000
+    crew_cost_per_block_hour_usd: 2900
+    generation: new_widebody
+
+  B777-200LR:
+    name: Boeing 777-200LR
+    body: wide
+    seats: 238
+    range_km: 15800
+    cruise_kmh: 892
+    fuel_burn_kgh: 7200
+    min_turn_min: 90
+    max_daily_util_h: 13.0
+    ownership_cost_per_day_usd: 26000
+    crew_cost_per_block_hour_usd: 2700
+    generation: legacy_widebody
+
+  B777-300ER:
+    name: Boeing 777-300ER
+    body: wide
+    seats: 342
+    range_km: 13600
+    cruise_kmh: 892
+    fuel_burn_kgh: 7900
+    min_turn_min: 100
+    max_daily_util_h: 13.5
+    ownership_cost_per_day_usd: 30000
+    crew_cost_per_block_hour_usd: 2900
+    generation: legacy_widebody
+
+  B777-9:
+    name: Boeing 777-9
+    body: wide
+    seats: 395
+    range_km: 13500
+    cruise_kmh: 902
+    fuel_burn_kgh: 7100
+    min_turn_min: 100
+    max_daily_util_h: 15.0
+    ownership_cost_per_day_usd: 48000
+    crew_cost_per_block_hour_usd: 2900
+    generation: new_widebody
+
+  B787-8:
+    name: Boeing 787-8
+    body: wide
+    seats: 256
+    range_km: 13600
+    cruise_kmh: 903
+    fuel_burn_kgh: 5200
+    min_turn_min: 75
+    max_daily_util_h: 14.0
+    ownership_cost_per_day_usd: 24000
+    crew_cost_per_block_hour_usd: 2500
+    generation: legacy_widebody
+
+  B787-9:
+    name: Boeing 787-9
+    body: wide
+    seats: 288
+    range_km: 14100
+    cruise_kmh: 903
+    fuel_burn_kgh: 5600
+    min_turn_min: 80
+    max_daily_util_h: 15.0
+    ownership_cost_per_day_usd: 34000
+    crew_cost_per_block_hour_usd: 2600
+    generation: new_widebody
+
+  B737MAX8:
+    name: Boeing 737 MAX 8
+    body: narrow
+    seats: 189
+    range_km: 6500
+    cruise_kmh: 839
+    fuel_burn_kgh: 2400
+    min_turn_min: 40
+    max_daily_util_h: 12.0
+    ownership_cost_per_day_usd: 11000
+    crew_cost_per_block_hour_usd: 950
+    generation: neo
+
+  B737MAX10:
+    name: Boeing 737 MAX 10
+    body: narrow
+    seats: 204
+    range_km: 6100          # stretched fuselage trades range for capacity vs. the MAX 8
+    cruise_kmh: 839
+    fuel_burn_kgh: 2550
+    min_turn_min: 45        # more seats to board/deplane than the MAX 8
+    max_daily_util_h: 12.0
+    ownership_cost_per_day_usd: 12500
+    crew_cost_per_block_hour_usd: 950   # same type rating as MAX 8, same crew cost
+    generation: neo
+
+# Maintenance programme parameters, by aircraft TYPE (not just body size).
+# A-check: light, overnight-able. C-check: heavy, aircraft out of service.
+# D-check: heaviest structural check.
+#
+# Tier 1 public-source proxy, synthesized from manufacturer MPD summaries and
+# industry MRO reporting (Airbus/Boeing maintenance-program overviews, SimpleFlying,
+# AeroTime, Aviation Week, ResearchGate; researched 2026-08). Real intervals vary by
+# *generation*, not just body size -- Airbus's neo-family MSG-3 program runs
+# materially longer A/C-check intervals than the legacy ceo family, and modern
+# widebodies (787/A350) run longer heavy-check cycles than legacy wide types.
+#
+# KNOWN LIMITATION: these are typical/baseline figures, not Air India's approved
+# maintenance program. Real intervals are operator-customizable -- e.g. the 777 has
+# no fixed OEM check schedule at all ("usage parameter program"); Emirates runs
+# 2,500 FH A-checks against a ~400-600 FH typical/baseline figure used here. B777-9
+# and A321XLR are estimated by extrapolating the typical new-generation extension
+# pattern from their in-service siblings, since neither has enough public in-service
+# MRO history yet. Replace with Air India's real MPD/MRBR data in Tier 2.
+maintenance:
+  A319:
+    a_check_interval_fh: 500
+    a_check_downtime_h: 14
+    c_check_interval_months: 20
+    c_check_downtime_days: 16
+    d_check_interval_years: 8
+    d_check_downtime_days: 28
+  A320ceo:
+    a_check_interval_fh: 500
+    a_check_downtime_h: 14
+    c_check_interval_months: 20
+    c_check_downtime_days: 16
+    d_check_interval_years: 8
+    d_check_downtime_days: 28
+  A320neo:
+    a_check_interval_fh: 750
+    a_check_downtime_h: 12
+    c_check_interval_months: 24
+    c_check_downtime_days: 18
+    d_check_interval_years: 10
+    d_check_downtime_days: 30
+  A321ceo:
+    a_check_interval_fh: 500
+    a_check_downtime_h: 14
+    c_check_interval_months: 20
+    c_check_downtime_days: 16
+    d_check_interval_years: 8
+    d_check_downtime_days: 28
+  A321neo:
+    a_check_interval_fh: 750
+    a_check_downtime_h: 12
+    c_check_interval_months: 24
+    c_check_downtime_days: 18
+    d_check_interval_years: 10
+    d_check_downtime_days: 30
+  A321XLR:
+    a_check_interval_fh: 750
+    a_check_downtime_h: 13
+    c_check_interval_months: 24
+    c_check_downtime_days: 19
+    d_check_interval_years: 10
+    d_check_downtime_days: 30
+  B737MAX8:
+    a_check_interval_fh: 500
+    a_check_downtime_h: 12
+    c_check_interval_months: 30
+    c_check_downtime_days: 16
+    d_check_interval_years: 10
+    d_check_downtime_days: 28
+  B737MAX10:
+    # No published in-service MRO history for this variant yet -- same MPD family
+    # as MAX 8 (identical type rating/airframe programme), so same figures until
+    # real data says otherwise.
+    a_check_interval_fh: 500
+    a_check_downtime_h: 12
+    c_check_interval_months: 30
+    c_check_downtime_days: 16
+    d_check_interval_years: 10
+    d_check_downtime_days: 28
+  B777-200LR:
+    a_check_interval_fh: 500
+    a_check_downtime_h: 40
+    c_check_interval_months: 20
+    c_check_downtime_days: 24
+    d_check_interval_years: 8
+    d_check_downtime_days: 45
+  B777-300ER:
+    a_check_interval_fh: 500
+    a_check_downtime_h: 40
+    c_check_interval_months: 20
+    c_check_downtime_days: 24
+    d_check_interval_years: 8
+    d_check_downtime_days: 45
+  B777-9:
+    a_check_interval_fh: 600
+    a_check_downtime_h: 36
+    c_check_interval_months: 24
+    c_check_downtime_days: 24
+    d_check_interval_years: 10
+    d_check_downtime_days: 42
+  B787-8:
+    a_check_interval_fh: 650
+    a_check_downtime_h: 30
+    c_check_interval_months: 22
+    c_check_downtime_days: 20
+    d_check_interval_years: 12
+    d_check_downtime_days: 40
+  B787-9:
+    a_check_interval_fh: 650
+    a_check_downtime_h: 30
+    c_check_interval_months: 22
+    c_check_downtime_days: 20
+    d_check_interval_years: 12
+    d_check_downtime_days: 40
+  A350-900:
+    a_check_interval_fh: 800
+    a_check_downtime_h: 28
+    c_check_interval_months: 30
+    c_check_downtime_days: 20
+    d_check_interval_years: 12
+    d_check_downtime_days: 38
+  A350-1000:
+    a_check_interval_fh: 800
+    a_check_downtime_h: 28
+    c_check_interval_months: 30
+    c_check_downtime_days: 20
+    d_check_interval_years: 12
+    d_check_downtime_days: 38
