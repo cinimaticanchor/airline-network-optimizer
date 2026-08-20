@@ -405,8 +405,17 @@ def cmd_expansion_plan(args: argparse.Namespace) -> int:
     assumptions = load_expansion_assumptions()
     today = load_fleet_config()["as_of"]
 
-    print(f"Growing demand and re-solving {args.start_year}-{args.end_year} (this takes a while)...")
-    result = recommend_expansion(args.start_year, args.end_year)
+    baseline_result = None
+    if args.enable_engine_degradation:
+        print(f"Solving {args.start_year}-{args.end_year} WITHOUT engine degradation (comparison baseline)...")
+        baseline_result = recommend_expansion(args.start_year, args.end_year)
+        print(f"Re-solving {args.start_year}-{args.end_year} WITH engine degradation (this takes a while)...")
+        result = recommend_expansion(
+            args.start_year, args.end_year, solve_kwargs={"enable_engine_degradation": True}
+        )
+    else:
+        print(f"Growing demand and re-solving {args.start_year}-{args.end_year} (this takes a while)...")
+        result = recommend_expansion(args.start_year, args.end_year)
 
     print(f"\nMulti-year expansion plan: {args.start_year}-{args.end_year}")
     print(BAR)
@@ -490,8 +499,66 @@ def cmd_expansion_plan(args: argparse.Namespace) -> int:
         "  history (13 B787s grounded for years, ~23% of fleet idle at peak pre-Tata era), not\n"
         "  an engine-family defect: the neo narrowbody fleet is CFM LEAP-powered, not the\n"
         "  Pratt & Whitney GTF variant behind the industry-wide grounding crisis. See\n"
-        "  cost_params.yaml's operations.unscheduled_downtime_rate comment for the full citation."
+        "  cost_params.yaml's operations.unscheduled_downtime_rate comment for the full citation.\n"
+        "  Caveat (2026-08 research, not yet folded into that rate): CFM LEAP-1A has its own,\n"
+        "  different durability issue -- HPT shroud coating erosion driving shop visits at\n"
+        "  roughly 2,000-4,000 cycles versus a ~20,000-cycle design target -- so \"LEAP not GTF\"\n"
+        "  should not be read as \"no engine risk.\" It is a reliability/downtime risk, distinct\n"
+        "  from the fuel-burn-degradation question below; unscheduled_downtime_rate has not been\n"
+        "  revisited in light of it yet."
     )
+
+    if args.enable_engine_degradation and baseline_result is not None:
+        from anos.costs.engine_degradation import load_degradation_assumptions, sensitivity_bands
+        from anos.planning.scenario_ladder import run_ladder
+
+        deg = load_degradation_assumptions()
+        n_checkpoints = len(result.ladder.checkpoints)
+        baseline_avg = (
+            sum(c.plan.total_contribution_usd for c in baseline_result.ladder.checkpoints)
+            / n_checkpoints
+        )
+
+        print("\nEngine fuel-burn degradation (research-grounded, opt-in)")
+        print(BAR)
+        print(
+            f"  Central assumption: {deg.d_max:.1%} fuel-burn premium at a {deg.age_ref_years:.0f}-year\n"
+            "  fleet age, a logarithmic curve calibrated to a published A320-family empirical\n"
+            "  study (not per-tail engine data, which does not exist in any public source -- see\n"
+            "  data/engine_degradation.yaml for full citations and per-type baseline-age assumptions)."
+        )
+
+        print("\n  Sensitivity across the real cited 2-6% fuel-burn-impact range (vs. the same")
+        print("  committed order book, no engine degradation):")
+        for band_name in ("low", "central", "high"):
+            band = sensitivity_bands(deg)[band_name]
+            band_ladder = run_ladder(
+                args.start_year, args.end_year,
+                solve_kwargs={"enable_engine_degradation": True, "degradation_assumptions": band},
+            )
+            band_avg = (
+                sum(c.plan.total_contribution_usd for c in band_ladder.checkpoints) / n_checkpoints
+            )
+            band_delta_annual = (band_avg - baseline_avg) * 365
+            print(
+                f"    {band_name:<8} (peak {band.d_max:.1%} at {band.age_ref_years:.0f}y fleet age)"
+                f"   {_usd(band_delta_annual)}/yr average contribution impact"
+            )
+
+        baseline_orders = sorted((o.type_code, o.count) for o in baseline_result.accepted_orders)
+        degraded_orders = sorted((o.type_code, o.count) for o in result.accepted_orders)
+        print()
+        if baseline_orders != degraded_orders:
+            print("  Accounting for engine degradation CHANGES the accepted-order recommendation:")
+            print(f"    without degradation: {baseline_orders or 'none'}")
+            print(f"    with degradation:    {degraded_orders or 'none'}")
+        else:
+            print(
+                f"  Accounting for engine degradation does not flip any accept/reject decision in\n"
+                f"  this horizon (same accepted orders either way: {degraded_orders or 'none'}), though\n"
+                "  it does raise the true fuel-cost baseline shown above -- material for budgeting\n"
+                "  even where it doesn't change which aircraft to order."
+            )
 
     print("\nWhat this plan cannot claim")
     print("  - Every checkpoint fixes the month at March; it does not capture within-year")
@@ -508,6 +575,10 @@ def cmd_expansion_plan(args: argparse.Namespace) -> int:
     print("    (tightened for this evaluation, but not eliminated) means a candidate whose NPV")
     print("    sits close to zero can flip sign between runs -- treat those as genuine toss-ups")
     print("    for a human to weigh, not as a confident accept or reject.")
+    if not args.enable_engine_degradation:
+        print("  - Every fuel-burn figure above assumes fresh-engine performance. Real turbofans")
+        print("    burn more fuel as they age -- rerun with --enable-engine-degradation to see the")
+        print("    research-grounded, sensitivity-tested size of that effect on this plan.")
     print()
     return 0
 
@@ -645,6 +716,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_expansion.add_argument(
         "--end-year", type=int, default=2032, help="last checkpoint year (default 2032)"
+    )
+    p_expansion.add_argument(
+        "--enable-engine-degradation",
+        action="store_true",
+        help=(
+            "age-adjust fuel burn (see anos.costs.engine_degradation) and show its "
+            "impact vs. a fresh-engine baseline, with a low/central/high sensitivity band"
+        ),
     )
     p_expansion.set_defaults(func=cmd_expansion_plan)
 

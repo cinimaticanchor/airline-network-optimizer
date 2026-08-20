@@ -18,6 +18,7 @@ from anos.config import (
     AIRCRAFT_TYPES_FILE,
     AIRPORTS_FILE,
     DEMAND_GROWTH_FILE,
+    ENGINE_DEGRADATION_FILE,
     EXPANSION_ASSUMPTIONS_FILE,
     FLEET_FILE,
     HUB_TOPOLOGY_FILE,
@@ -180,6 +181,14 @@ def load_expansion_assumptions_config(path: Path | None = None) -> dict[str, Any
     """Discount rate, order lead times and detection/sizing thresholds for
     `anos.planning.fleet_expansion` (opt-in, multi-year expansion planning only)."""
     with open(path or EXPANSION_ASSUMPTIONS_FILE, encoding="utf-8") as fh:
+        return yaml.safe_load(fh)
+
+
+@lru_cache(maxsize=1)
+def load_engine_degradation_config(path: Path | None = None) -> dict[str, Any]:
+    """Fuel-burn-degradation curve and per-type baseline fleet ages for
+    `anos.costs.engine_degradation` (opt-in fuel-burn adjustment)."""
+    with open(path or ENGINE_DEGRADATION_FILE, encoding="utf-8") as fh:
         return yaml.safe_load(fh)
 
 

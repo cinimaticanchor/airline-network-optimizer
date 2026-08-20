@@ -53,6 +53,7 @@ def leg_economics(
     params: Params | None = None,
     fast_turn: bool = False,
     carbon_priced: bool = False,
+    degraded_fuel_burn: dict[str, float] | None = None,
 ) -> LegEconomics:
     """Cost, capacity and time consumed by one daily round trip.
 
@@ -63,6 +64,10 @@ def leg_economics(
 
     `carbon_priced` folds a blended EU/UK ETS-style carbon cost into the round trip
     when either endpoint sits in `params.carbon_priced_countries`.
+
+    `degraded_fuel_burn` (opt-in, from `anos.costs.engine_degradation`) overrides
+    `ac.fuel_burn_kgh` for this type with an age-adjusted figure when present;
+    omitted or missing a key reproduces today's fresh-engine numbers exactly.
     """
     par = params or load_params()
     ports = airports or load_airports()
@@ -82,8 +87,9 @@ def leg_economics(
 
     # Fuel: cruise burn over block time, uplifted for reserves, plus ground burn
     # for each of the two cycles.
+    fuel_burn_kgh = (degraded_fuel_burn or {}).get(ac.code, ac.fuel_burn_kgh)
     fuel_kg = (
-        ac.fuel_burn_kgh * block_h_round_trip * par.fuel_contingency_factor
+        fuel_burn_kgh * block_h_round_trip * par.fuel_contingency_factor
         + 2 * par.taxi_burn_kg_per_cycle
     )
     fuel_cost = fuel_kg * par.fuel_price_usd_per_kg
@@ -127,6 +133,7 @@ def build_economics(
     params: Params | None = None,
     fast_turn: bool = False,
     carbon_priced: bool = False,
+    degraded_fuel_burn: dict[str, float] | None = None,
 ) -> dict[tuple[str, str], LegEconomics]:
     """Precompute economics for every (market, type) pairing.
 
@@ -146,7 +153,7 @@ def build_economics(
         for ac in types.values():
             econ = leg_economics(
                 market, ac, airports=ports, params=par, fast_turn=fast_turn,
-                carbon_priced=carbon_priced,
+                carbon_priced=carbon_priced, degraded_fuel_burn=degraded_fuel_burn,
             )
             if econ.eligible:
                 out[(market.market_id, ac.code)] = econ
@@ -166,12 +173,16 @@ def rotation_economics(
     *,
     airports: dict[str, Airport] | None = None,
     params: Params | None = None,
+    degraded_fuel_burn: dict[str, float] | None = None,
 ) -> RotationEconomics:
     """Cost and aircraft-hours for flying one hub -> stop1 -> stop2 -> hub loop once.
 
     A loop shares one hub departure and three turns across both leg markets, instead
     of two separate round trips' four sectors and four turns -- it is a cheaper way
     to source the same two markets' frequency, not a new market of its own.
+
+    `degraded_fuel_burn` is the same opt-in age-adjusted fuel-burn override as
+    `leg_economics`.
     """
     par = params or load_params()
     ports = airports or load_airports()
@@ -197,9 +208,8 @@ def rotation_economics(
     planned_turn_h = (ac.min_turn_min * par.turn_buffer_factor) / 60.0
     aircraft_hours = block_h + 3 * planned_turn_h
 
-    fuel_kg = (
-        ac.fuel_burn_kgh * block_h * par.fuel_contingency_factor + 3 * par.taxi_burn_kg_per_cycle
-    )
+    fuel_burn_kgh = (degraded_fuel_burn or {}).get(ac.code, ac.fuel_burn_kgh)
+    fuel_kg = fuel_burn_kgh * block_h * par.fuel_contingency_factor + 3 * par.taxi_burn_kg_per_cycle
     fuel_cost = fuel_kg * par.fuel_price_usd_per_kg
     crew_cost = ac.crew_cost_per_block_hour_usd * block_h
     ownership_cost = (ac.ownership_cost_per_day_usd / ac.max_daily_util_h) * aircraft_hours
@@ -225,6 +235,7 @@ def build_rotation_economics(
     candidates: list[RotationCandidate],
     *,
     params: Params | None = None,
+    degraded_fuel_burn: dict[str, float] | None = None,
 ) -> dict[tuple[str, str], RotationEconomics]:
     """Precompute economics for every (rotation, type) pairing, eligible ones only."""
     par = params or load_params()
@@ -234,7 +245,9 @@ def build_rotation_economics(
     out: dict[tuple[str, str], RotationEconomics] = {}
     for candidate in candidates:
         for ac in types.values():
-            econ = rotation_economics(candidate, ac, airports=ports, params=par)
+            econ = rotation_economics(
+                candidate, ac, airports=ports, params=par, degraded_fuel_burn=degraded_fuel_burn
+            )
             if econ.eligible:
                 out[(candidate.rotation_id, ac.code)] = econ
     return out

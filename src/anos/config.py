@@ -23,6 +23,7 @@ HUB_TOPOLOGY_FILE = DATA_DIR / "hub_topology.yaml"
 TIMESPACE_FILE = DATA_DIR / "timespace.yaml"
 DEMAND_GROWTH_FILE = DATA_DIR / "demand_growth.yaml"
 EXPANSION_ASSUMPTIONS_FILE = DATA_DIR / "expansion_assumptions.yaml"
+ENGINE_DEGRADATION_FILE = DATA_DIR / "engine_degradation.yaml"
 
 
 @dataclass(frozen=True)

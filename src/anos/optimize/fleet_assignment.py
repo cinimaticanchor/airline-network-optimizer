@@ -40,8 +40,12 @@ from __future__ import annotations
 
 import time
 from datetime import date
+from typing import TYPE_CHECKING
 
 from ortools.sat.python import cp_model
+
+if TYPE_CHECKING:
+    from anos.costs.engine_degradation import DegradationAssumptions
 
 from anos.config import Params, load_params
 from anos.costs.economics import build_economics, build_rotation_economics
@@ -116,6 +120,8 @@ def solve_network(
     carbon_priced: bool = False,
     enable_recapture: bool = False,
     enable_interline: bool = False,
+    enable_engine_degradation: bool = False,
+    degradation_assumptions: DegradationAssumptions | None = None,
 ) -> NetworkPlan:
     """Solve the fleet-assignment problem for one representative day.
 
@@ -154,6 +160,13 @@ def solve_network(
         enable_interline: let markets flagged `interline_available` in markets.csv
             (structurally unbankable at any hub we control) sell a partner/codeshare
             itinerary at a stated flat prorate (`params.interline_prorate_usd_per_pax`).
+        enable_engine_degradation: adjust each type's fuel burn upward by an
+            estimated fleet-average age (see `anos.costs.engine_degradation`), a
+            stated research-grounded curve rather than per-tail engine data. Default
+            reproduces today's fresh-engine fuel-burn numbers exactly.
+        degradation_assumptions: override for the degradation curve, e.g. a
+            `DegradationAssumptions.scaled(...)` low/central/high sensitivity band.
+            Only used when `enable_engine_degradation` is set; ignored otherwise.
 
     Raises:
         InfeasibleNetworkError: if no feasible network exists.
@@ -165,7 +178,15 @@ def solve_network(
 
     types = load_aircraft_types()
     ports = load_airports()
-    economics = build_economics(mkts, params=par, fast_turn=fast_turn, carbon_priced=carbon_priced)
+    degraded_fuel_burn: dict[str, float] | None = None
+    if enable_engine_degradation:
+        from anos.costs.engine_degradation import degraded_fuel_burn_by_type
+
+        degraded_fuel_burn = degraded_fuel_burn_by_type(target, assumptions=degradation_assumptions)
+    economics = build_economics(
+        mkts, params=par, fast_turn=fast_turn, carbon_priced=carbon_priced,
+        degraded_fuel_burn=degraded_fuel_burn,
+    )
     hours_available = daily_aircraft_hours(snapshot)
 
     problems = _preflight(mkts, economics)
@@ -183,7 +204,9 @@ def solve_network(
         else []
     )
     rot_econ: dict[tuple[str, str], RotationEconomics] = (
-        build_rotation_economics(rotations, params=par) if rotations else {}
+        build_rotation_economics(rotations, params=par, degraded_fuel_burn=degraded_fuel_burn)
+        if rotations
+        else {}
     )
 
     feeder_candidates: dict[str, list[ConnectionCandidate]] = {}

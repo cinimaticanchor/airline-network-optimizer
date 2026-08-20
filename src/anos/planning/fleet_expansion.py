@@ -146,16 +146,24 @@ def _tighten_for_financial_precision(params: Params, assumptions: ExpansionAssum
 
 
 def _solve_or_relax(
-    target: date, *, month: int, markets: list[Market], fleet: FleetSnapshot, params: Params
+    target: date,
+    *,
+    month: int,
+    markets: list[Market],
+    fleet: FleetSnapshot,
+    params: Params,
+    solve_kwargs: dict[str, Any] | None = None,
 ) -> NetworkPlan:
     """Solve one checkpoint, relaxing minimum-service floors if they cannot be met.
 
     Same fallback `anos.planning.scenario_ladder.run_ladder` uses -- a WITH/WITHOUT
     financial comparison must not fail just because one side alone cannot clear
-    every floor.
+    every floor. `solve_kwargs` forwards arbitrary opt-in `solve_network` flags
+    (e.g. `enable_engine_degradation`) through both the primary and fallback solve.
     """
+    extra = solve_kwargs or {}
     try:
-        return solve_network(target, month=month, markets=markets, fleet=fleet, params=params)
+        return solve_network(target, month=month, markets=markets, fleet=fleet, params=params, **extra)
     except InfeasibleNetworkError:
         return solve_network(
             target,
@@ -163,7 +171,7 @@ def _solve_or_relax(
             markets=markets,
             fleet=fleet,
             params=params,
-            enforce_min_service=False,
+            **{**extra, "enforce_min_service": False},
         )
 
 
@@ -176,6 +184,7 @@ def size_candidate(
     params: Params | None = None,
     growth: GrowthAssumptions | None = None,
     assumptions: ExpansionAssumptions | None = None,
+    solve_kwargs: dict[str, Any] | None = None,
 ) -> CandidateOrder:
     """The smallest integer count of additional `signal.subject`-type aircraft that
     brings utilisation at the horizon's *final* checkpoint down to a comfortable
@@ -216,7 +225,9 @@ def size_candidate(
             end=date(delivery_start_year, 12, 31),
         )
         snapshot = fleet_on(target, config=trial_config, params=par)
-        plan = _solve_or_relax(target, month=3, markets=grown, fleet=snapshot, params=par)
+        plan = _solve_or_relax(
+            target, month=3, markets=grown, fleet=snapshot, params=par, solve_kwargs=solve_kwargs
+        )
         utilisation = plan.utilisation().get(type_code, 0.0)
 
         if utilisation <= a.target_utilisation_ceiling or count >= a.max_candidate_count:
@@ -265,6 +276,7 @@ def evaluate_candidate(
     base_fleet_config: dict[str, Any],
     params: Params | None = None,
     assumptions: ExpansionAssumptions | None = None,
+    solve_kwargs: dict[str, Any] | None = None,
 ) -> OrderEvaluation:
     """WITH-vs-WITHOUT re-solve at every checkpoint from the candidate's delivery
     year through the horizon end.
@@ -273,6 +285,8 @@ def evaluate_candidate(
     grown market list -- it is whatever ladder the caller already solved against
     `base_fleet_config` this iteration, so it is reused, not re-solved. Only the
     WITH side (`base_fleet_config` plus this candidate's order) is solved here.
+    `solve_kwargs` must match whatever produced `baseline_ladder`, or the two sides
+    of the comparison rest on different assumptions.
     """
     a = assumptions or load_expansion_assumptions()
     par = params or load_params()
@@ -303,6 +317,7 @@ def evaluate_candidate(
             markets=list(checkpoint.grown_markets),
             fleet=with_snapshot,
             params=par,
+            solve_kwargs=solve_kwargs,
         )
 
         # total_contribution_usd is a *single representative day*'s figure (the
@@ -345,6 +360,7 @@ def recommend_expansion(
     growth: GrowthAssumptions | None = None,
     assumptions: ExpansionAssumptions | None = None,
     max_orders: int = 8,
+    solve_kwargs: dict[str, Any] | None = None,
 ) -> ExpansionPlan:
     """The staged expansion loop: detect, size, evaluate, commit-or-stop, repeat.
 
@@ -361,6 +377,12 @@ def recommend_expansion(
         of a prior one is still evaluated and can still be accepted, but is
         flagged via `OrderEvaluation.review_flag` for a human to double check
         rather than silently approved back-to-back.
+
+    `solve_kwargs` forwards arbitrary opt-in `solve_network` flags (e.g.
+    `enable_engine_degradation`, `degradation_assumptions`) through every solve in
+    this pipeline -- detection, sizing, and WITH/WITHOUT evaluation alike, so a
+    degradation-aware run genuinely compares degradation-aware economics end to end,
+    not just at the reporting layer.
     """
     a = assumptions or load_expansion_assumptions()
     par = _tighten_for_financial_precision(params or load_params(), a)
@@ -370,7 +392,7 @@ def recommend_expansion(
     rolling_config = copy.deepcopy(fleet_config if fleet_config is not None else load_fleet_config())
     ladder = run_ladder(
         start_year, end_year, markets=base_markets, fleet_config=rolling_config,
-        params=par, growth=growth_assumptions,
+        params=par, growth=growth_assumptions, solve_kwargs=solve_kwargs,
     )
 
     evaluations: list[OrderEvaluation] = []
@@ -399,10 +421,11 @@ def recommend_expansion(
         candidate = size_candidate(
             most_urgent, end_year=end_year, fleet_config=rolling_config,
             markets=base_markets, params=par, growth=growth_assumptions, assumptions=a,
+            solve_kwargs=solve_kwargs,
         )
         evaluation = evaluate_candidate(
             candidate, baseline_ladder=ladder, base_fleet_config=rolling_config,
-            params=par, assumptions=a,
+            params=par, assumptions=a, solve_kwargs=solve_kwargs,
         )
 
         prior_years = committed_order_years.get(candidate.type_code, [])
@@ -432,7 +455,7 @@ def recommend_expansion(
         committed_order_years.setdefault(candidate.type_code, []).append(candidate.order_year)
         ladder = run_ladder(
             start_year, end_year, markets=base_markets, fleet_config=rolling_config,
-            params=par, growth=growth_assumptions,
+            params=par, growth=growth_assumptions, solve_kwargs=solve_kwargs,
         )
 
     final_signals = tuple(detect_signals(ladder))

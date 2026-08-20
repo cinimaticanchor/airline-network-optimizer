@@ -1,0 +1,74 @@
+# Turbofan fuel-burn degradation: how much more fuel an aircraft burns as its engines
+# age, on top of the fresh-engine `fuel_burn_kgh` figures in aircraft_types.yaml.
+#
+# STATED ASSUMPTION, researched 2026-08. There is no per-tail engine-health data
+# (EGT trend monitoring, cycles-since-overhaul) anywhere in this project -- that is
+# proprietary to the operator/OEM and out of scope (public sources only). This models
+# degradation as a function of *estimated average fleet age* instead, using a curve
+# calibrated to real published research:
+#
+#   - NASA CF6/JT9D deterioration studies (NASA CR, ~1978-1980): ~2.5-3% cruise SFC
+#     deterioration by 2,500-3,000 flights from a fresh/overhauled state; the
+#     majority of that is NOT recovered by a shop visit, so it compounds shop-visit
+#     over shop-visit rather than resetting to zero each time.
+#   - "Aircraft Fuel Flow Modelling with Ageing Effects" (arXiv, 2025), an empirical
+#     A320-family fleet study: fuel consumption up to ~6% higher at ~20 years
+#     airframe age vs. new, following a roughly logarithmic curve. This is the best
+#     single empirical anchor available and directly covers the A320/A321 types,
+#     which make up most of this fleet.
+#   - Arrieta et al. 2024 (MDPI Aerospace, CF34 cycle model): ~4.5% cumulative
+#     lifetime fuel penalty from deterioration -- consistent with the arXiv figure.
+#
+# The curve is calibrated to the arXiv A320-family study and extrapolated to other
+# types (787/777/A350) as a stated, disclosed simplification: no equally precise
+# public age-vs-fuel-burn curve exists for those types. See
+# src/anos/costs/engine_degradation.py for the functional form.
+#
+# NOTE, flagged but not modelled here: shop-visit intervals vary enormously by
+# engine family -- legacy CFM56-5B/7B and V2500 run ~10,000-15,000 cycles, while
+# CFM LEAP-1A (this fleet's neo-narrowbody engine) has been running only
+# ~2,000-4,000 cycles in practice (an HPT shroud coating durability issue, distinct
+# from the Pratt & Whitney GTF powder-metal issue already documented in
+# cost_params.yaml's unscheduled_downtime_rate comment), and Trent XWB (A350) shows
+# a similarly short ~2,300-3,400-cycle first-run interval. This is a genuine
+# *reliability/downtime* risk channel, separate from the fuel-burn-creep question
+# this file answers -- it argues for revisiting unscheduled_downtime_rate's
+# neo-vs-legacy framing separately, not for anything in this file.
+
+curve:
+  # degradation_pct(age_years) = d_max * ln(1 + age_years) / ln(1 + age_ref_years)
+  # d_max is the *central* estimate within the cited 2-6% fuel-burn-impact range --
+  # used directly, with no scaling, for a default single-run solve.
+  d_max: 0.045
+  age_ref_years: 20
+
+# Multipliers on curve.d_max for sensitivity analysis, spanning the real cited
+# 2-6% range: low = 0.045 * 2/3 = 0.03 (close to NASA's "mostly-restored" figure),
+# high = 0.045 * 4/3 = 0.06 (matches the arXiv empirical ceiling).
+sensitivity:
+  low: 0.6667
+  central: 1.0
+  high: 1.3333
+
+# Estimated average age (years) of each type's *current* in-service count, as of
+# fleet.yaml's as_of date (2026-07-01). Types with no in-service aircraft yet
+# (purely on order) need no entry -- their age is determined entirely by the order
+# delivery ramp in fleet.yaml. Sourced from aviation-press secondary reporting
+# (Boeing/Airbus delivery announcements, CAPA/CentreForAviation fleet-age reporting,
+# NetworkThoughts retrospectives) -- adequate for a baseline-age assumption, not
+# primary OEM delivery ledgers. Confidence noted per entry.
+baseline_avg_age_years:
+  # High confidence: single, well-documented order with a known delivery window.
+  A350-900: 2.0 # first delivery Dec 2023, deliveries continuing through 2024
+  A321neo: 2.0 # first delivery Mar 2023, ongoing
+  A320neo: 8.0 # induction 2017-2019
+  B787-9: 5.5 # ex-Vistara fleet, first delivered Feb 2020
+  B777-200LR: 18.0 # single 2005/2006 order, first delivery Jul 2007
+  B777-300ER: 17.0 # same order, first delivery Oct 2007, delivered through ~2010
+
+  # Lower confidence: aggregate/secondary-source figures, or a fleet assembled from
+  # multiple eras (mergers, retirements in progress).
+  A320ceo: 16.0 # CAPA-reported ~15.7y average (Jan 2026), no ex-Vistara ceo aircraft
+  A321ceo: 17.0 # CAPA-reported ~16.5y average (Jan 2026)
+  A319: 21.0 # ~2003-2007 delivery era, being actively retired as of 2024-2026
+  B787-8: 12.0 # delivered 2012-2017, weighted toward 2013-2015 (pre-Tata order)
