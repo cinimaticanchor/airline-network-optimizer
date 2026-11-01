@@ -7,7 +7,50 @@
 # summary: one-paragraph human-readable summary of what that run found and changed
 # sources_checked: list of {source, checked_on} the last run actually queried
 # data_changes: list of {file, change, reason, source} applied in the last run
-last_run: null
-summary: null
-sources_checked: []
+
+last_run: 2026-11-01
+summary: >
+  First automated run. Checked for Air India order/delivery news, ATF pricing,
+  DGCA slot/route bulletins and a new demand-forecast edition since the Aug-2026
+  research already baked into fleet.yaml and demand_growth.yaml. Made no data
+  edits: the only order/delivery news is unconfirmed deferral talk that Air India
+  itself denies, and unconfirmed talk of a further ~300-aircraft order, neither firm
+  enough to act on. ATF has risen materially in India through 2026 but public
+  reporting on domestic-vs-international rates and litre/kilolitre/kg conventions
+  was too inconsistent to convert into cost_params.yaml's USD/kg figure without
+  risking a fabricated number. Mumbai CSMIA Terminal 2's proposed 33% international
+  slot cut (which would have hit Air India for 33 of 100 weekly international
+  departures) was paused by the government and replaced with a phased, still-firming
+  shift of some Mumbai operations to Navi Mumbai International Airport from Dec 2026
+  -- too unsettled to encode in airports.csv/markets.csv yet. No new Boeing CMO /
+  Airbus GMF / DGCA forecast edition was found, though it's worth flagging that H1
+  2026 realized India domestic traffic grew only ~1.4% YoY (DGCA/ICRA-reported),
+  far below demand_growth.yaml's 11% near-term CAGR assumption, apparently a
+  West Asia conflict/fuel-price/capacity-cut effect rather than a change in
+  structural growth forecasts -- worth re-checking next cycle if it persists.
+  validate/pytest/ruff all passed on the unmodified data. Three planning-calendar
+  target months (2026-11, 2026-12, 2027-01) were due for finalization on this first
+  run and have been processed: expansion-plan and report outputs written to
+  output/, and data/planning_state.yaml updated.
+sources_checked:
+  - source: WebSearch -- Air India aircraft orders/deliveries/cancellations news
+    checked_on: 2026-11-01
+  - source: WebSearch -- Air India/Airbus/Boeing delivery deferral reports
+    checked_on: 2026-11-01
+  - source: WebSearch -- India ATF/jet fuel price reporting (2026)
+    checked_on: 2026-11-01
+  - source: WebSearch -- DGCA slot allocation / Mumbai & Delhi airport bulletins
+    checked_on: 2026-11-01
+  - source: WebSearch -- Mumbai CSMIA Terminal 2 international slot cut dispute
+    checked_on: 2026-11-01
+  - source: WebSearch -- Noida International Airport (DXN) operations status
+    checked_on: 2026-11-01
+  - source: WebSearch -- Boeing CMO / India-South Asia market outlook editions
+    checked_on: 2026-11-01
+  - source: WebSearch -- DGCA domestic passenger traffic statistics (2026)
+    checked_on: 2026-11-01
+  - source: WebSearch -- Air India fleet grounding / AOG / spares news
+    checked_on: 2026-11-01
+  - source: WebSearch -- DGCA safety directives/bulletins re Air India
+    checked_on: 2026-11-01
 data_changes: []
