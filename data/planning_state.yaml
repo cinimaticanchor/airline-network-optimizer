@@ -1,7 +1,10 @@
-# Ledger of which flying months have already had their routes finalized -- read
-# and written by anos.planning.planning_calendar (finalization_cutoff,
-# record_finalization). A month appears here once, the first time it is finalized;
-# a later run must not re-finalize (and re-churn) an already-locked month.
-#
-# Each entry: {target_month: YYYY-MM-01, finalized_on: YYYY-MM-DD, report_path: ...}
-finalized: []
+finalized:
+- target_month: '2026-11-01'
+  finalized_on: '2026-11-01'
+  report_path: output/network-plan-2026-11.html
+- target_month: '2026-12-01'
+  finalized_on: '2026-11-01'
+  report_path: output/network-plan-2026-12.html
+- target_month: '2027-01-01'
+  finalized_on: '2026-11-01'
+  report_path: output/network-plan-2027-01.html
